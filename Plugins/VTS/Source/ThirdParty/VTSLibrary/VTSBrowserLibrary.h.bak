@@ -1,0 +1,12 @@
+#include <ThirdParty/VTSLibrary/include/vts-browser/log.h>
+
+
+#if defined _WIN32 || defined _WIN64
+#define VTS_BROWSER_LIBRARY_IMPORT __declspec(dllimport)
+#elif defined __linux__
+#define VTS_BROWSER_LIBRARY_IMPORT __attribute__((visibility("default")))
+#else
+#define VTS_BROWSER_LIBRARY_IMPORT
+#endif
+
+VTS_BROWSER_LIBRARY_IMPORT void vtsLog(uint32 level, const char* message);

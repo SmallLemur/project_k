@@ -1,0 +1,20 @@
+#if defined _WIN32 || defined _WIN64
+#include <Windows.h>
+
+#define VTS_BROWSER_LIBRARY_EXPORT __declspec(dllexport)
+#else
+#include <stdio.h>
+#endif
+
+#ifndef VTS_BROWSER_LIBRARY_EXPORT
+#define VTS_BROWSER_LIBRARY_EXPORT
+#endif
+
+VTS_BROWSER_LIBRARY_EXPORT void vtsLog(uint32 level, const char* message)
+{
+#if defined _WIN32 || defined _WIN64
+    MessageBox(NULL, TEXT("Loaded vts-browser.dll from Third Party Plugin sample!!!"), TEXT("Third Party Plugin"), MB_OK);
+#else
+    printf("Loaded ExampleLibrary from Third Party Plugin sample");
+#endif
+}
