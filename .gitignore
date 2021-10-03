@@ -437,6 +437,7 @@ Plugins/*/Intermediate/*
 DerivedDataCache/*
 
 **/ThirdParty/generated
+**/ThirdParty/generated_bak
 **/VTSLibrary/include
 
 **/vts-browser-cpp-build-wrapper

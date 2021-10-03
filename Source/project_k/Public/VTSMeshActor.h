@@ -8,8 +8,11 @@
 #include "UObject/ObjectMacros.h"
 #include "Math/Vector.h"
 
+#include "ProceduralMeshComponent.h"
+
 #include <vts-browser/map.hpp>
 #include <vts-browser/camera.hpp>
+#include <vts-browser/cameraDraws.hpp>
 #include <vts-browser/navigation.hpp>
 #include <vts-browser/position.hpp>
 #include <vts-browser/log.h>
@@ -33,7 +36,59 @@ struct FVTSLoadMesh {
 	}
 };
 
+struct FLoadedMeshIndex {
+	int32 SectionIndex;
+	UProceduralMeshComponent* TargetMesh;
 
+	FLoadedMeshIndex(
+		int32 sectionIndex,
+		UProceduralMeshComponent* targetMesh
+	) {
+		SectionIndex = sectionIndex;
+		TargetMesh = targetMesh;
+	}
+
+	FLoadedMeshIndex(
+	) {
+		SectionIndex = -1;
+		TargetMesh = nullptr;
+	}
+
+	~FLoadedMeshIndex() {
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan, std::to_string(SectionIndex).c_str());
+		if (SectionIndex != -1 && TargetMesh != nullptr) {
+			TargetMesh->ClearMeshSection(SectionIndex);
+			TargetMesh = nullptr;
+		}
+	}
+
+};
+
+struct FLoadedMesh {
+	int32 SectionIndex;
+	TArray<FVector>* Vertices;
+	TArray<FVector>* Normals;
+	TArray<FVector2D>* UVs;
+	TArray<FLinearColor>* Colors;
+	TArray<FProcMeshTangent>* Tangents;
+
+
+	FLoadedMesh(
+		int32 sectionIndex,
+		TArray<FVector>* vertices,
+		TArray<FVector>* normals,
+		TArray<FVector2D>* uvs,
+		TArray<FLinearColor>* colors,
+		TArray<FProcMeshTangent>* tangents
+	) {
+		SectionIndex = sectionIndex;
+		Vertices = vertices;
+		Normals = normals;
+		UVs = uvs;
+		Colors = colors;
+		Tangents = tangents;
+	}
+};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnLoadMeshDelegate,
 	const TArray<FVector>&, Vertices,
@@ -72,11 +127,13 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnLoadMeshSimpleDelegate OnLoadMeshSimple;
 
+	UPROPERTY(BlueprintReadWrite, Category = "VTS")
+	UProceduralMeshComponent* TargetMesh;
 
-	void LoadMesh(FVTSLoadMesh* loadMeshInfo);
+	int32 LoadMesh(FVTSLoadMesh* loadMeshInfo);
+	void UpdateMesh(vts::DrawColliderTask task, FTransform transform);
 
 private:
-	FMatrix* vts2Matrix(double proj[16]);
 	TArray<FVector>* ExtractBuffer3(vts::GpuMeshSpec& spec, int attributeIndex);
 	TArray<int32>* LoadTrianglesIndices(vts::GpuMeshSpec& spec);
 	float ExtractFloat(vts::GpuMeshSpec& spec, uint32 byteOffset, vts::GpuTypeEnum type, bool normalized);
@@ -84,4 +141,9 @@ private:
 	unsigned short BytesToUInt16(vts::Buffer& input, uint32 startOffset);
 	int BytesToInt32(vts::Buffer& input, uint32 startOffset);
 	float BytesToSingle(vts::Buffer& input, uint32 startOffset);
+
+	int32 currentMeshSectionIndex;
+
+protected:
+	TMap<int32, FLoadedMesh*> loadedMeshes;
 };

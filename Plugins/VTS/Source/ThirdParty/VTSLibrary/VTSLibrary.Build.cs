@@ -73,7 +73,7 @@ public class VTSLibrary : ModuleRules
 							  + configureCode);
 			return false;
 		}
-		
+
 		var installCommand = CreateCMakeInstallCommand(buildPath, buildType);
 		Console.WriteLine("> install >" + installCommand);
 		var buildCode = 0;//ExecuteCommandSync(installCommand);
@@ -82,7 +82,7 @@ public class VTSLibrary : ModuleRules
 			Console.WriteLine("Cannot build project. Exited with code: " + buildCode);
 			return false;
 		}
-		
+
 		var installPath = Path.Combine(ThirdPartyPath, "generated");
 
 		var dirs = new List<String> { "lib", "bin", "include" };

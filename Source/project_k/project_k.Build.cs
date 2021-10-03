@@ -8,7 +8,7 @@ public class project_k : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" }); //"VTS"
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent" }); //"VTS"
 
 		//PrivateDependencyModuleNames.AddRange(new string[] { "VTS" });
 

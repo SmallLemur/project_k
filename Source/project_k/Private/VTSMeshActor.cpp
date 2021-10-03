@@ -15,7 +15,8 @@ AVTSMeshActor::AVTSMeshActor()
 void AVTSMeshActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	//loadedMeshes = new TMap<int32, FLoadedMesh*>();
+	//AVTSMeshActor::loadedMeshes[-1] = nullptr;// Add(-1, nullptr);
 }
 
 // Called every frame
@@ -25,14 +26,83 @@ void AVTSMeshActor::Tick(float DeltaTime)
 
 }
 
-void AVTSMeshActor::LoadMesh(FVTSLoadMesh* loadMeshInfo)
+int32 AVTSMeshActor::LoadMesh(FVTSLoadMesh* loadMeshInfo)
 {
 	TArray<FVector>* vertices = ExtractBuffer3(*loadMeshInfo->Spec, 0);
-	//TArray<FVector>& normals;
+	TArray<FVector> normals;
 	TArray<int32>* triangles = LoadTrianglesIndices(*loadMeshInfo->Spec);
-	//TArray<FVector2D>& uvs;
+	TArray<FVector2D> uvs;
+	TArray<FLinearColor> colors;
+	TArray<FProcMeshTangent> tangents;
+	for (size_t i = 0; i < vertices->Num(); i++)
+	{
+		normals.Add(FVector(0, 0, 1));
+		uvs.Add(FVector2D(0, 0));
+		colors.Add(FLinearColor(0xff, 0, 0));
+		tangents.Add(FProcMeshTangent(0, 1, 0));
+	}
+	//normals.Init(FVector(0, 0, 1), vertices->Num());
+	//uvs.Init(FVector2D(0, 0), vertices->Num());
+	//colors.Init(FLinearColor(0xff, 0, 0), vertices->Num());
+	//tangents.Init(FProcMeshTangent(0, 1, 0), vertices->Num());
 
-	OnLoadMeshSimple.Broadcast(*vertices, *triangles);
+	FLoadedMesh* loadedMesh = new FLoadedMesh(
+		currentMeshSectionIndex, vertices, &normals, &uvs, &colors, &tangents
+	);
+	currentMeshSectionIndex++;
+	
+	//OnLoadMeshSimple.Broadcast(*vertices, *triangles);
+
+	TargetMesh->CreateMeshSection_LinearColor(
+		loadedMesh->SectionIndex,
+		*loadedMesh->Vertices,
+		*triangles,
+		*loadedMesh->Normals,
+		*loadedMesh->UVs,
+		*loadedMesh->Colors,
+		*loadedMesh->Tangents,
+		false
+	);
+	//AVTSMeshActor::loadedMeshes[loadedMesh->SectionIndex] = loadedMesh;
+	AVTSMeshActor::loadedMeshes.Add(loadedMesh->SectionIndex, loadedMesh);
+	//loadedMeshes.Add(loadedMesh->SectionIndex, loadedMesh);
+	//GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan, TEXT("" + currentMeshSectionIndex));
+	//loadMeshInfo->Info->userData = std::make_shared<FLoadedMesh>(*loadedMesh);
+
+	std::shared_ptr<FLoadedMeshIndex> sp = std::make_shared<FLoadedMeshIndex>();
+	sp->SectionIndex = loadedMesh->SectionIndex;
+	sp->TargetMesh = TargetMesh;
+
+	loadMeshInfo->Info->userData = sp;
+	return loadedMesh->SectionIndex;
+}
+
+void AVTSMeshActor::UpdateMesh(vts::DrawColliderTask task, FTransform transform) {
+	//FLoadedMesh *lm = (FLoadedMesh *) task.mesh.get();
+	//FLoadedMesh *loadedMesh = (FLoadedMesh *) task.mesh.get();
+	FLoadedMeshIndex* loadedMeshIndex = (FLoadedMeshIndex*)task.mesh.get();
+	int32 meshIndex = loadedMeshIndex->SectionIndex;
+	
+	//FLoadedMesh* loadedMesh = *loadedMeshes->Find(lm->SectionIndex);
+	FLoadedMesh* loadedMesh = AVTSMeshActor::loadedMeshes[meshIndex];
+	
+	if (!loadedMesh){// || !loadedMesh->Vertices || !loadedMesh->Normals || loadedMesh->Normals->Num() == 0) {
+		return;
+	}
+	TArray<FVector> transformed;
+	for (auto vec : *loadedMesh->Vertices) {
+		transformed.Add(transform.TransformPosition(vec));
+	}
+	//loadedMesh->Vertices = &transformed;
+
+	TargetMesh->UpdateMeshSection_LinearColor(
+		loadedMesh->SectionIndex,
+		transformed,//*loadedMesh->Vertices,
+		TArray<FVector>(),//*loadedMesh->Normals,
+		TArray<FVector2D>(), //*loadedMesh->UVs,
+		TArray<FLinearColor>(), //*loadedMesh->Colors,
+		TArray<FProcMeshTangent>() //*loadedMesh->Tangents
+	);
 }
 
 TArray<FVector>* AVTSMeshActor::ExtractBuffer3(vts::GpuMeshSpec& spec, int attributeIndex) {
@@ -89,35 +159,6 @@ float AVTSMeshActor::ExtractFloat(vts::GpuMeshSpec& spec, uint32 byteOffset, vts
 	}
 }
 
-
-FMatrix* AVTSMeshActor::vts2Matrix(double proj[16]) {
-	return new FMatrix(
-		FPlane(
-			proj[0],
-			proj[1],
-			proj[2],
-			proj[3]
-		),
-		FPlane(
-			proj[4],
-			proj[5],
-			proj[6],
-			proj[7]
-		),
-		FPlane(
-			proj[8],
-			proj[9],
-			proj[10],
-			proj[11]
-		),
-		FPlane(
-			proj[12],
-			proj[13],
-			proj[14],
-			proj[15]
-		)
-	);
-}
 
 short AVTSMeshActor::BytesToInt16(vts::Buffer& input, uint32 startOffset)
 {

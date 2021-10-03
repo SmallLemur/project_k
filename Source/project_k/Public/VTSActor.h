@@ -4,14 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "UObject/ObjectMacros.h"
 #include "Math/Vector.h"
 
 #include <vts-browser/map.hpp>
 #include <vts-browser/camera.hpp>
+#include <vts-browser/cameraDraws.hpp>
 #include <vts-browser/navigation.hpp>
 #include <vts-browser/position.hpp>
+#include <vts-browser/positionCommon.h>
 #include <vts-browser/log.h>
 #include <vts-browser/mapCallbacks.hpp>
 #include <vts-browser/resources.hpp>
@@ -40,12 +43,15 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable, Category = "VTS")
-	void UpdateFrom(UCameraComponent* camera);
+	void UpdateFrom(AActor* camera);
 	
 	UPROPERTY(BlueprintReadWrite, Category = "VTS")
 	AVTSMeshActor* meshActor;
 
 private:
+	FMatrix vts2Matrix(float proj[16]);
+	FMatrix vts2Matrix(double proj[16]);
+	void matrix2vts(FMatrix mat, double out[16]);
 	std::shared_ptr<vts::Map> map;
 	std::shared_ptr<vts::Camera> cam;
 	std::shared_ptr<vts::Navigation> nav;
@@ -60,4 +66,5 @@ private:
 		FVector(0, 0, 0)
 	);
 
+	FVector origin;
 };
