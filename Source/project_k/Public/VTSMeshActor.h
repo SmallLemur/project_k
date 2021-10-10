@@ -55,7 +55,6 @@ struct FLoadedMeshIndex {
 	}
 
 	~FLoadedMeshIndex() {
-		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan, std::to_string(SectionIndex).c_str());
 		if (SectionIndex != -1 && TargetMesh != nullptr) {
 			TargetMesh->ClearMeshSection(SectionIndex);
 			TargetMesh = nullptr;

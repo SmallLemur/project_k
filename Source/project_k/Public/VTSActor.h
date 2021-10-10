@@ -19,7 +19,7 @@
 #include <vts-browser/mapCallbacks.hpp>
 #include <vts-browser/resources.hpp>
 #include <VTSMeshActor.h>
-
+#include <CoordinateFunctions.h>
 // always last
 #include "VTSActor.generated.h"
 
@@ -48,10 +48,31 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "VTS")
 	AVTSMeshActor* meshActor;
 
+	UPROPERTY(EditAnywhere, Category = "VTS")
+	AActor* Camera;
+
+	UPROPERTY(VisibleAnywhere, Category = "VTS")
+	FVector llaOrigin;
+
+	UPROPERTY(VisibleAnywhere, Category = "VTS")
+	FVector origin;
+
+	UPROPERTY(VisibleAnywhere, Category = "VTS")
+	FRotator orientation;
+
+	UPROPERTY(VisibleAnywhere, Category = "VTS")
+	FVector llaPosition;
+
+	UPROPERTY(VisibleAnywhere, Category = "VTS")
+	FVector position;
+
 private:
 	FMatrix vts2Matrix(float proj[16]);
 	FMatrix vts2Matrix(double proj[16]);
+	FVector vts2vector(double vec[3]);
+	FRotator vts2rotator(double vec[3]);
 	void matrix2vts(FMatrix mat, double out[16]);
+	void vector2vts(FVector vec, double out[3]);
 	std::shared_ptr<vts::Map> map;
 	std::shared_ptr<vts::Camera> cam;
 	std::shared_ptr<vts::Navigation> nav;
@@ -66,5 +87,5 @@ private:
 		FVector(0, 0, 0)
 	);
 
-	FVector origin;
+	
 };

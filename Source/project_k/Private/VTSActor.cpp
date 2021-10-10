@@ -54,12 +54,17 @@ void AVTSActor::BeginPlay()
 		auto str = std::to_string(pos.point[0]) +
 			" , " + std::to_string(pos.point[1]) +
 			" , " + std::to_string(pos.point[2]);
-		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan, str.c_str());
-		origin = FVector(
-			(float) pos.point[0],
-			(float) pos.point[1],
-			(float) pos.point[2]
-		);
+		GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Cyan, str.c_str());
+
+		llaOrigin = vts2vector(pos.point);
+		FVector temp;
+		UCoordinateFunctions::LLAToECEF(llaOrigin, temp);
+		UCoordinateFunctions::ECEFToUE4(temp, origin);
+		
+		orientation = vts2rotator(pos.orientation);
+		
+		Camera->SetActorLocation(origin);
+		Camera->SetActorRotation(orientation);
 	};
 	flag = true;
 }
@@ -90,11 +95,27 @@ void AVTSActor::Tick(float DeltaTime)
 		return;
 	}
 
+	FVector temp;
+	position = Camera->GetActorLocation();
+	UCoordinateFunctions::UE4ToECEF(position, temp);
+	UCoordinateFunctions::ECEFToLLA2(temp, llaPosition);
+	
+	double vec[3];
+	vector2vts(llaPosition, vec);
+	double vec2[3] = {
+		vec[1],
+		vec[0],
+		vec[2]
+	};
+	nav->setPoint(vec2);
+
 	auto d = cam->draws();
 	for (auto o : d.colliders)
 	{
 		FMatrix m = vts2Matrix(o.mv) * *SwapXY;
 		FTransform t = FTransform(m);
+		t.AddToTranslation(origin);
+
 		meshActor->UpdateMesh(o, t);
 	}
 }
@@ -111,7 +132,7 @@ void AVTSActor::UpdateFrom(AActor* camera)
 	auto str = std::to_string(p[0]) +
 		" , " + std::to_string(p[1]) +
 		" , " + std::to_string(p[2]);
-	GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan, str.c_str());
+	//GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan, str.c_str());
 
 	auto proj = new double[16];
 	cam->getProj(proj);
@@ -132,7 +153,7 @@ void AVTSActor::UpdateFrom(AActor* camera)
 	//	pos.point[1],
 	//	pos.point[2]
 	//);
-
+	/*
 	double navPoint[3];
 	map->convert(p, navPoint, vts::Srs::Navigation, vts::Srs::Physical);
 	FVector unavPoint = FVector(
@@ -142,7 +163,7 @@ void AVTSActor::UpdateFrom(AActor* camera)
 	);
 
 	FVector unavShifted = unavPoint + camera->GetActorLocation();
-	GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, unavPoint.ToString());
+	//GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, unavPoint.ToString());
 
 	double navShifted[] = {
 		unavShifted.X,
@@ -152,7 +173,7 @@ void AVTSActor::UpdateFrom(AActor* camera)
 	double shifted[3];
 	map->convert(navShifted, shifted, vts::Srs::Physical, vts::Srs::Navigation);
 
-	nav->setPoint(shifted);
+	//nav->setPoint(shifted);
 	//camera->SetActorLocation(origin);
 
 
@@ -166,6 +187,7 @@ void AVTSActor::UpdateFrom(AActor* camera)
 	
 	//translate.TransformPosition(point)
 	//nav->setPosition(pos);
+	*/
 }
 
 
@@ -234,4 +256,26 @@ void AVTSActor::matrix2vts(FMatrix mat, double out[16]) {
 			out[j+i*4] = mat.M[i][j];
 		}
 	}
+}
+
+FVector AVTSActor::vts2vector(double vec[3]) {
+	return FVector(
+		vec[0],
+		vec[1],
+		vec[2]
+	);
+}
+
+FRotator AVTSActor::vts2rotator(double vec[3]) {
+	return FRotator(
+		vec[0],
+		vec[1],
+		vec[2]
+	);
+}
+
+void AVTSActor::vector2vts(FVector vec, double out[3]) {
+	out[0] = vec.X;
+	out[1] = vec.Y;
+	out[2] = vec.Z;
 }
