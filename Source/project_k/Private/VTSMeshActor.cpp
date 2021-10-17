@@ -51,10 +51,11 @@ int32 AVTSMeshActor::LoadMesh(FVTSLoadMesh* loadMeshInfo)
 	);
 	currentMeshSectionIndex++;
 	
-	//OnLoadMeshSimple.Broadcast(*vertices, *triangles);
+	UProceduralMeshComponent* TargetMesh = NewObject<UProceduralMeshComponent>(this, FName("mesh", currentMeshSectionIndex));
+	TargetMesh->RegisterComponent();
 
 	TargetMesh->CreateMeshSection_LinearColor(
-		loadedMesh->SectionIndex,
+		0,
 		*loadedMesh->Vertices,
 		*triangles,
 		*loadedMesh->Normals,
@@ -63,12 +64,9 @@ int32 AVTSMeshActor::LoadMesh(FVTSLoadMesh* loadMeshInfo)
 		*loadedMesh->Tangents,
 		false
 	);
-	//AVTSMeshActor::loadedMeshes[loadedMesh->SectionIndex] = loadedMesh;
-	AVTSMeshActor::loadedMeshes.Add(loadedMesh->SectionIndex, loadedMesh);
-	//loadedMeshes.Add(loadedMesh->SectionIndex, loadedMesh);
-	//GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan, TEXT("" + currentMeshSectionIndex));
-	//loadMeshInfo->Info->userData = std::make_shared<FLoadedMesh>(*loadedMesh);
 
+	AVTSMeshActor::loadedMeshes.Add(loadedMesh->SectionIndex, loadedMesh);
+	
 	std::shared_ptr<FLoadedMeshIndex> sp = std::make_shared<FLoadedMeshIndex>();
 	sp->SectionIndex = loadedMesh->SectionIndex;
 	sp->TargetMesh = TargetMesh;
@@ -89,20 +87,21 @@ void AVTSMeshActor::UpdateMesh(vts::DrawColliderTask task, FTransform transform)
 	if (!loadedMesh){// || !loadedMesh->Vertices || !loadedMesh->Normals || loadedMesh->Normals->Num() == 0) {
 		return;
 	}
+	loadedMeshIndex->TargetMesh->SetWorldTransform(transform);
+	/*
 	TArray<FVector> transformed;
 	for (auto vec : *loadedMesh->Vertices) {
 		transformed.Add(transform.TransformPosition(vec));
 	}
 	//loadedMesh->Vertices = &transformed;
-
-	TargetMesh->UpdateMeshSection_LinearColor(
-		loadedMesh->SectionIndex,
+	loadedMeshIndex->TargetMesh->UpdateMeshSection_LinearColor(
+		0,//loadedMesh->SectionIndex,
 		transformed,//*loadedMesh->Vertices,
 		TArray<FVector>(),//*loadedMesh->Normals,
 		TArray<FVector2D>(), //*loadedMesh->UVs,
 		TArray<FLinearColor>(), //*loadedMesh->Colors,
 		TArray<FProcMeshTangent>() //*loadedMesh->Tangents
-	);
+	);*/
 }
 
 TArray<FVector>* AVTSMeshActor::ExtractBuffer3(vts::GpuMeshSpec& spec, int attributeIndex) {

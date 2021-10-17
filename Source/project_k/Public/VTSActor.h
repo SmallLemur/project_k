@@ -42,9 +42,6 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(BlueprintCallable, Category = "VTS")
-	void UpdateFrom(AActor* camera);
-	
 	UPROPERTY(BlueprintReadWrite, Category = "VTS")
 	AVTSMeshActor* meshActor;
 
@@ -81,10 +78,10 @@ private:
 	void SpawnSupportingActors();
 
 	FMatrix* SwapXY = new FMatrix(
-		FVector(0, 1, 0),
-		FVector(1, 0, 0),
-		FVector(0, 0, 1),
-		FVector(0, 0, 0)
+		FPlane(0, 1, 0, 0),
+		FPlane(1, 0, 0, 0),
+		FPlane(0, 0, 1, 0),
+		FPlane(0, 0, 0, 1)
 	);
 
 	

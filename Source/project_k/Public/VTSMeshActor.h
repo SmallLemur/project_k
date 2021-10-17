@@ -55,9 +55,8 @@ struct FLoadedMeshIndex {
 	}
 
 	~FLoadedMeshIndex() {
-		if (SectionIndex != -1 && TargetMesh != nullptr) {
-			TargetMesh->ClearMeshSection(SectionIndex);
-			TargetMesh = nullptr;
+		if (TargetMesh != nullptr && TargetMesh != NULL) {
+			TargetMesh->UnregisterComponent();
 		}
 	}
 
@@ -126,8 +125,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnLoadMeshSimpleDelegate OnLoadMeshSimple;
 
-	UPROPERTY(BlueprintReadWrite, Category = "VTS")
-	UProceduralMeshComponent* TargetMesh;
+	//UPROPERTY(BlueprintReadWrite, Category = "VTS")
+	//UProceduralMeshComponent* TargetMesh;
 
 	int32 LoadMesh(FVTSLoadMesh* loadMeshInfo);
 	void UpdateMesh(vts::DrawColliderTask task, FTransform transform);

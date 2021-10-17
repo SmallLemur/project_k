@@ -73,7 +73,7 @@ void UCoordinateFunctions::ECEFToLLA2(
 
     // Earth 
     
-    double a = 6378137;
+    double a = 637813700; //cm
     double e = 8.181919084261345e-2;
     
     /*
@@ -121,7 +121,7 @@ void UCoordinateFunctions::LLAToECEF(
 
     // Earth 
     
-    double a = 6378137;
+    double a = 637813700; //cm
     double e = 8.181919084261345e-2;
 
     /*

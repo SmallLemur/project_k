@@ -38,7 +38,6 @@ void AVTSActor::BeginPlay()
 
 
 	map->callbacks().loadMesh = [this](vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const std::string& debugId) {
-		//LoadMesh(info, spec, debugId);
 		// https://github.com/melowntech/vts-browser-unity-plugin/blob/9ba1d85cfdc8f4bde621b4ed5f16938ac846b108/src/Vts/Scripts/BrowserUtil/VtsResources.cs
 		auto meshInfo = new FVTSLoadMesh(
 			&info,
@@ -46,9 +45,10 @@ void AVTSActor::BeginPlay()
 			FString(debugId.c_str())
 		);
 		
-		int32 index = meshActor->LoadMesh(meshInfo);
-		//meshInfo->Info->userData = std::make_shared<int32>(index);
+		meshActor->LoadMesh(meshInfo);
 	};
+	map->callbacks().loadTexture = [this](vts::ResourceInfo& info, vts::GpuTextureSpec& spec, const std::string& id) {};
+
 	map->callbacks().mapconfigReady = [this]() {
 		auto pos = map->getMapDefaultPosition();
 		auto str = std::to_string(pos.point[0]) +
@@ -114,82 +114,12 @@ void AVTSActor::Tick(float DeltaTime)
 	{
 		FMatrix m = vts2Matrix(o.mv) * *SwapXY;
 		FTransform t = FTransform(m);
-		t.AddToTranslation(origin);
+		t.AddToTranslation(-vts2vector(vec2));
+		//t.AddToTranslation(origin-position);
 
 		meshActor->UpdateMesh(o, t);
 	}
 }
-
-void AVTSActor::UpdateFrom(AActor* camera)
-{
-	if (!map->getMapconfigReady() || !flag) {
-		return;
-	}
-	//vts::Position pos = nav->getPosition();
-	double p[3];
-	nav->getPoint(p);
-
-	auto str = std::to_string(p[0]) +
-		" , " + std::to_string(p[1]) +
-		" , " + std::to_string(p[2]);
-	//GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan, str.c_str());
-
-	auto proj = new double[16];
-	cam->getProj(proj);
-	FMatrix original = vts2Matrix(proj);
-
-	//FMatrix mat = *vts2Matrix(proj);
-	//mat *= *SwapXY;
-	//FTransform* t = new FTransform(mat);
-	//camera->SetWorldTransform(*t);
-	//double point[] = {
-	//	(double) camera->GetTargetLocation().Y,
-	//	(double) camera->GetTargetLocation().X,
-	//	(double) camera->GetTargetLocation().Z
-	//};
-
-	//FVector upoint = FVector(
-	//	pos.point[0],
-	//	pos.point[1],
-	//	pos.point[2]
-	//);
-	/*
-	double navPoint[3];
-	map->convert(p, navPoint, vts::Srs::Navigation, vts::Srs::Physical);
-	FVector unavPoint = FVector(
-		navPoint[0],
-		navPoint[1],
-		navPoint[2]
-	);
-
-	FVector unavShifted = unavPoint + camera->GetActorLocation();
-	//GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, unavPoint.ToString());
-
-	double navShifted[] = {
-		unavShifted.X,
-		unavShifted.Y,
-		unavShifted.Z
-	};
-	double shifted[3];
-	map->convert(navShifted, shifted, vts::Srs::Physical, vts::Srs::Navigation);
-
-	//nav->setPoint(shifted);
-	//camera->SetActorLocation(origin);
-
-
-	//TODO: camera gets weirdly reset insead of updating
-	// try flipping translation concat (order of operations)
-	//FMatrix translate = FMatrix::Identity.ConcatTranslation(origin).ConcatTranslation(-camera->GetActorLocation());
-	//FMatrix transformed = original.ConcatTranslation(origin);
-	//FMatrix transformed = translate * original;
-	//matrix2vts(transformed, proj);
-	//cam->setProj(proj);
-	
-	//translate.TransformPosition(point)
-	//nav->setPosition(pos);
-	*/
-}
-
 
 FMatrix AVTSActor::vts2Matrix(float proj[16]) {
 	return FMatrix(
