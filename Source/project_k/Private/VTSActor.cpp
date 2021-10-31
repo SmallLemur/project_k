@@ -57,9 +57,12 @@ void AVTSActor::BeginPlay()
 		GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Cyan, str.c_str());
 
 		llaOrigin = vts2vector(pos.point);
-		FVector temp;
-		UCoordinateFunctions::LLAToECEF(llaOrigin, temp);
-		UCoordinateFunctions::ECEFToUE4(temp, origin);
+		//FVector temp;
+
+		//UCoordinateFunctions::LLAToECEF(llaOrigin, temp);
+		double temp[3];
+		map->convert(pos.point, temp, vts::Srs::Navigation, vts::Srs::Physical);
+		UCoordinateFunctions::ECEFToUE4(vts2vector(temp), origin);
 		
 		orientation = vts2rotator(pos.orientation);
 		
@@ -95,6 +98,22 @@ void AVTSActor::Tick(float DeltaTime)
 		return;
 	}
 
+	position = Camera->GetActorLocation();
+	
+	double temp[3];
+	FVector pos;
+	UCoordinateFunctions::UE4ToECEF(position, pos);
+	double tempPos[3];
+	vector2vts(pos, tempPos);
+	map->convert(tempPos, temp, vts::Srs::Physical, vts::Srs::Navigation);
+
+	nav->setPoint(temp);
+	//auto tm = Camera->GetActorTransform().ToMatrixNoScale() * *SwapXY;
+	//double view[16];
+	//matrix2vts(tm, view);
+	//cam->setView(view);
+
+	/*
 	FVector temp;
 	position = Camera->GetActorLocation();
 	UCoordinateFunctions::UE4ToECEF(position, temp);
@@ -108,16 +127,39 @@ void AVTSActor::Tick(float DeltaTime)
 		vec[2]
 	};
 	nav->setPoint(vec2);
+	*/
 
 	auto d = cam->draws();
-	for (auto o : d.colliders)
+	auto conv = Camera->GetActorTransform().ToMatrixNoScale() * vts2Matrix(d.camera.view).Inverse();
+	for (auto o : d.opaque)
 	{
-		FMatrix m = vts2Matrix(o.mv) * *SwapXY;
-		FTransform t = FTransform(m);
-		t.AddToTranslation(-vts2vector(vec2));
+		FMatrix m = conv * vts2Matrix(o.mv); //* *SwapXY;
+		FTransform t = FTransform();
+		t.SetTranslation(m.GetColumn(3));
+		
+		float sxs = m.Determinant() < 0 ? -1 : 1;
+		t.SetScale3D(
+			FVector(
+				m.GetColumn(0).Size() * sxs,
+				m.GetColumn(1).Size(),
+				m.GetColumn(2).Size()
+			)
+		);
+		t.SetRotation(
+			FRotationMatrix::MakeFromXZ(
+				m.GetColumn(2) / t.GetScale3D().Z,
+				m.GetColumn(1) / t.GetScale3D().Y
+			).ToQuat()
+		);
+		
+		transformStuff = t;
+		//t.AddToTranslation(-vts2vector(vec2));
 		//t.AddToTranslation(origin-position);
-
-		meshActor->UpdateMesh(o, t);
+		//t.AddToTranslation(origin);
+		//t.SetTranslation(t.GetTranslation() - position);
+		auto tt = vts::DrawColliderTask();
+		tt.mesh = o.mesh;
+		meshActor->UpdateMesh(tt, t);
 	}
 }
 

@@ -63,6 +63,12 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "VTS")
 	FVector position;
 
+	UPROPERTY(VisibleAnywhere, Category = "VTS")
+	FVector convertedPosition;
+
+	UPROPERTY(VisibleAnywhere, Category = "VTS")
+	FTransform transformStuff;
+
 private:
 	FMatrix vts2Matrix(float proj[16]);
 	FMatrix vts2Matrix(double proj[16]);
