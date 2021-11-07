@@ -87,7 +87,8 @@ void AVTSMeshActor::UpdateMesh(vts::DrawColliderTask task, FTransform transform)
 	if (!loadedMesh){// || !loadedMesh->Vertices || !loadedMesh->Normals || loadedMesh->Normals->Num() == 0) {
 		return;
 	}
-	loadedMeshIndex->TargetMesh->SetWorldTransform(transform);
+	//loadedMeshIndex->TargetMesh->SetWorldTransform(transform);
+	loadedMeshIndex->TargetMesh->SetRelativeTransform(transform);
 	/*
 	TArray<FVector> transformed;
 	for (auto vec : *loadedMesh->Vertices) {
@@ -127,6 +128,7 @@ TArray<FVector>* AVTSMeshActor::ExtractBuffer3(vts::GpuMeshSpec& spec, int attri
 
 TArray<int32>* AVTSMeshActor::LoadTrianglesIndices(vts::GpuMeshSpec& spec) {
 	auto indices = new TArray<int32>();
+	
 	if (spec.indicesCount > 0) {
 		for (uint32 i = 0; i < spec.indicesCount; i++) {
 			indices->Add(BytesToInt16(spec.indices, i * 2));
@@ -134,12 +136,11 @@ TArray<int32>* AVTSMeshActor::LoadTrianglesIndices(vts::GpuMeshSpec& spec) {
 	}
 	else
 	{
-		indices = new TArray<int32>[spec.verticesCount];
 		for (uint32 i = 0; i < spec.verticesCount; i += 3)
 		{
-			indices->Insert(i + 0, i + 0);
-			indices->Insert(i + 1, i + 1);
-			indices->Insert(i + 2, i + 2);
+			indices->Add(i + 0);
+			indices->Add(i + 1);
+			indices->Add(i + 2);
 		}
 	}
 	return indices;

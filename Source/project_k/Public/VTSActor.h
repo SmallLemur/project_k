@@ -90,5 +90,7 @@ private:
 		FPlane(0, 0, 0, 1)
 	);
 
+	void ue2vtsNavigation(FVector vec, double out[3]);
+	void makeLocal(double navPt[3]);
 	
 };
