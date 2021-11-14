@@ -42,7 +42,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(BlueprintReadWrite, Category = "VTS")
+	UPROPERTY(EditAnywhere, Category = "VTS")
 	AVTSMeshActor* meshActor;
 
 	UPROPERTY(EditAnywhere, Category = "VTS")
@@ -83,12 +83,19 @@ private:
 
 	void SpawnSupportingActors();
 
-	FMatrix* SwapXY = new FMatrix(
-		FPlane(0, 1, 0, 0),
+	FMatrix* TransformCoord = new FMatrix(
 		FPlane(1, 0, 0, 0),
+		FPlane(0, -1, 0, 0),
 		FPlane(0, 0, 1, 0),
 		FPlane(0, 0, 0, 1)
 	);
+
+	/*
+	FPlane(0, 1, 0, 0),
+		FPlane(0, 0, 1, 0),
+		FPlane(-1, 0, 0, 0),
+		FPlane(0, 0, 0, 1)
+	*/
 
 	void ue2vtsNavigation(FVector vec, double out[3]);
 	void makeLocal(double navPt[3]);

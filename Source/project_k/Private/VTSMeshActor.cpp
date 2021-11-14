@@ -17,6 +17,12 @@ void AVTSMeshActor::BeginPlay()
 	Super::BeginPlay();
 	//loadedMeshes = new TMap<int32, FLoadedMesh*>();
 	//AVTSMeshActor::loadedMeshes[-1] = nullptr;// Add(-1, nullptr);
+
+
+	arrow = NewObject<UArrowComponent>(this, FName("arrow", 0));
+	arrow->RegisterComponent();
+
+	
 }
 
 // Called every frame
@@ -50,7 +56,7 @@ int32 AVTSMeshActor::LoadMesh(FVTSLoadMesh* loadMeshInfo)
 		currentMeshSectionIndex, vertices, &normals, &uvs, &colors, &tangents
 	);
 	currentMeshSectionIndex++;
-	
+	/*
 	UProceduralMeshComponent* TargetMesh = NewObject<UProceduralMeshComponent>(this, FName("mesh", currentMeshSectionIndex));
 	TargetMesh->RegisterComponent();
 
@@ -63,13 +69,35 @@ int32 AVTSMeshActor::LoadMesh(FVTSLoadMesh* loadMeshInfo)
 		*loadedMesh->Colors,
 		*loadedMesh->Tangents,
 		false
-	);
+	);*/
+
+	FActorSpawnParameters SpawnParams;
+	AActor* tile = GetWorld()->SpawnActor<AActor>(TileBP, GetTransform(), SpawnParams);
+
+	TArray<UProceduralMeshComponent*> Comps;
+
+	tile->GetComponents(Comps);
+	UProceduralMeshComponent* TargetMesh;
+	if (Comps.Num() > 0)
+	{
+		TargetMesh = Comps[0];
+		TargetMesh->CreateMeshSection_LinearColor(
+			0,
+			*loadedMesh->Vertices,
+			*triangles,
+			*loadedMesh->Normals,
+			*loadedMesh->UVs,
+			*loadedMesh->Colors,
+			*loadedMesh->Tangents,
+			false
+		);
+	}
 
 	AVTSMeshActor::loadedMeshes.Add(loadedMesh->SectionIndex, loadedMesh);
 	
 	std::shared_ptr<FLoadedMeshIndex> sp = std::make_shared<FLoadedMeshIndex>();
 	sp->SectionIndex = loadedMesh->SectionIndex;
-	sp->TargetMesh = TargetMesh;
+	sp->TargetMesh = tile;
 
 	loadMeshInfo->Info->userData = sp;
 	return loadedMesh->SectionIndex;
@@ -88,7 +116,8 @@ void AVTSMeshActor::UpdateMesh(vts::DrawColliderTask task, FTransform transform)
 		return;
 	}
 	//loadedMeshIndex->TargetMesh->SetWorldTransform(transform);
-	loadedMeshIndex->TargetMesh->SetRelativeTransform(transform);
+	//loadedMeshIndex->TargetMesh->SetRelativeTransform(transform);
+	loadedMeshIndex->TargetMesh->SetActorTransform(transform);
 	/*
 	TArray<FVector> transformed;
 	for (auto vec : *loadedMesh->Vertices) {

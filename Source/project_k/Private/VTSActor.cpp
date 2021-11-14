@@ -73,7 +73,8 @@ void AVTSActor::BeginPlay()
 }
 
 void AVTSActor::SpawnSupportingActors() {
-	meshActor = GetWorld()->SpawnActor<AVTSMeshActor>();
+	//meshActor = GetWorld()->SpawnActor<AVTSMeshActor>();
+	//meshActor = GetWorld()->fin
 }
 
 void AVTSActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -134,32 +135,37 @@ void AVTSActor::Tick(float DeltaTime)
 	ue2vtsNavigation(Camera->GetActorLocation(), targetNavigationPoint);
 
 	//makeLocal(targetNavigationPoint);
+	
 	auto v = Camera->GetActorLocation();
-	meshActor->SetActorLocation(FVector(0, -v.Size(), 0));
+	//meshActor->SetActorLocation(FVector(0, -v.Size(), 0));
+	/*
 	meshActor->SetActorRotation(
-		FQuat::MakeFromEuler(FVector(0, 90.0, 0)) *
+		FQuat::MakeFromEuler(FVector(0, 0, -90.0))  *
 		FQuat::FindBetweenVectors(-v, GetActorLocation())
 	);
-
+	*/
 	FVector move = -Camera->GetActorLocation();
 	float Yrot = (float)(targetNavigationPoint[0] - originalNavigationPoint[0]) * FMath::Sign((float)originalNavigationPoint[1]);
 
-
 	auto d = cam->draws();
-	//auto conv = Camera->GetActorTransform().ToMatrixNoScale() * vts2Matrix(d.camera.view).Inverse();
+	auto conv = FMatrix::Identity;// **TransformCoord* vts2Matrix(d.camera.view).Inverse();
 	for (auto o : d.opaque)
 	{
-		FMatrix m = vts2Matrix(o.mv) * *SwapXY;
+		FMatrix m = conv * vts2Matrix(o.mv);// * *TransformCoord;
 		//FMatrix m = conv * vts2Matrix(o.mv); //* *SwapXY;
 		FTransform t = FTransform(m);
+
+
+
+
 		/*
 		t.SetTranslation(m.GetColumn(3));
 		
-		float sxs = m.Determinant() < 0 ? -1 : 1;
-		t.SetScale3D(
 			FVector(
 				m.GetColumn(0).Size() * sxs,
-				m.GetColumn(1).Size(),
+				m.GetColumn(1).Size
+		float sxs = m.Determinant() < 0 ? -1 : 1;
+		t.SetScale3D((),
 				m.GetColumn(2).Size()
 			)
 		);
@@ -177,7 +183,7 @@ void AVTSActor::Tick(float DeltaTime)
 		//t.SetTranslation(t.GetTranslation() - position);
 		*/
 
-		t.AddToTranslation(move);
+		//t.AddToTranslation(move);
 		//t.SetRotation(FVector::ZeroVector.RotateAngleAxis(Yrot, FVector::UpVector).Rotation().Quaternion());
 
 		auto tt = vts::DrawColliderTask();

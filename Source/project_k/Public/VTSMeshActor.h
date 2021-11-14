@@ -9,6 +9,8 @@
 #include "Math/Vector.h"
 
 #include "ProceduralMeshComponent.h"
+#include "Components/ArrowComponent.h"
+
 
 #include <vts-browser/map.hpp>
 #include <vts-browser/camera.hpp>
@@ -38,11 +40,11 @@ struct FVTSLoadMesh {
 
 struct FLoadedMeshIndex {
 	int32 SectionIndex;
-	UProceduralMeshComponent* TargetMesh;
+	AActor* TargetMesh;
 
 	FLoadedMeshIndex(
 		int32 sectionIndex,
-		UProceduralMeshComponent* targetMesh
+		AActor* targetMesh
 	) {
 		SectionIndex = sectionIndex;
 		TargetMesh = targetMesh;
@@ -56,7 +58,8 @@ struct FLoadedMeshIndex {
 
 	~FLoadedMeshIndex() {
 		if (TargetMesh != nullptr && TargetMesh != NULL) {
-			TargetMesh->UnregisterComponent();
+			//TargetMesh->UnregisterComponent();
+			TargetMesh->Destroy(true);
 		}
 	}
 
@@ -131,6 +134,9 @@ public:
 	int32 LoadMesh(FVTSLoadMesh* loadMeshInfo);
 	void UpdateMesh(vts::DrawColliderTask task, FTransform transform);
 
+	UPROPERTY(EditAnywhere, Category = "VTS")
+	TSubclassOf<AActor> TileBP;
+
 private:
 	TArray<FVector>* ExtractBuffer3(vts::GpuMeshSpec& spec, int attributeIndex);
 	TArray<int32>* LoadTrianglesIndices(vts::GpuMeshSpec& spec);
@@ -144,4 +150,5 @@ private:
 
 protected:
 	TMap<int32, FLoadedMesh*> loadedMeshes;
+	UArrowComponent* arrow;
 };
