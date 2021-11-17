@@ -10,7 +10,7 @@
 
 #include "ProceduralMeshComponent.h"
 #include "Components/ArrowComponent.h"
-
+#include <VTSUtil.h>
 
 #include <vts-browser/map.hpp>
 #include <vts-browser/camera.hpp>
@@ -138,14 +138,6 @@ public:
 	TSubclassOf<AActor> TileBP;
 
 private:
-	TArray<FVector>* ExtractBuffer3(vts::GpuMeshSpec& spec, int attributeIndex);
-	TArray<int32>* LoadTrianglesIndices(vts::GpuMeshSpec& spec);
-	float ExtractFloat(vts::GpuMeshSpec& spec, uint32 byteOffset, vts::GpuTypeEnum type, bool normalized);
-	short BytesToInt16(vts::Buffer& input, uint32 startOffset);
-	unsigned short BytesToUInt16(vts::Buffer& input, uint32 startOffset);
-	int BytesToInt32(vts::Buffer& input, uint32 startOffset);
-	float BytesToSingle(vts::Buffer& input, uint32 startOffset);
-
 	int32 currentMeshSectionIndex;
 
 protected:

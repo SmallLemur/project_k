@@ -3,6 +3,7 @@
 
 #include "VTSActor.h"
 #include "..\Public\VTSActor.h"
+#include "VTSUtil.h"
 
 // Sets default values
 AVTSActor::AVTSActor()
@@ -56,15 +57,15 @@ void AVTSActor::BeginPlay()
 			" , " + std::to_string(pos.point[2]);
 		GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Cyan, str.c_str());
 
-		llaOrigin = vts2vector(pos.point);
+		llaOrigin = UVTSUtil::vts2vector(pos.point);
 		//FVector temp;
 
 		//UCoordinateFunctions::LLAToECEF(llaOrigin, temp);
 		double temp[3];
 		map->convert(pos.point, temp, vts::Srs::Navigation, vts::Srs::Physical);
-		UCoordinateFunctions::ECEFToUE4(vts2vector(temp), origin);
+		UCoordinateFunctions::ECEFToUE4(UVTSUtil::vts2vector(temp), origin);
 		
-		orientation = vts2rotator(pos.orientation);
+		orientation = UVTSUtil::vts2rotator(pos.orientation);
 		
 		//Camera->SetActorLocation(origin);
 		Camera->SetActorRotation(orientation);
@@ -106,9 +107,9 @@ void AVTSActor::Tick(float DeltaTime)
 	FVector pos;
 	UCoordinateFunctions::UE4ToECEF(position, pos);
 	double tempPos[3];
-	vector2vts(pos, tempPos);
+	UVTSUtil::vector2vts(pos, tempPos);
 	map->convert(tempPos, temp, vts::Srs::Physical, vts::Srs::Navigation);
-	llaPosition = vts2vector(temp);
+	llaPosition = UVTSUtil::vts2vector(temp);
 
 	nav->setPoint(temp);
 	//auto tm = Camera->GetActorTransform().ToMatrixNoScale() * *SwapXY;
@@ -151,7 +152,7 @@ void AVTSActor::Tick(float DeltaTime)
 	auto conv = FMatrix::Identity;// **TransformCoord* vts2Matrix(d.camera.view).Inverse();
 	for (auto o : d.opaque)
 	{
-		FMatrix m = conv * vts2Matrix(o.mv);// * *TransformCoord;
+		FMatrix m = conv * UVTSUtil::vts2Matrix(o.mv) ;// * *TransformCoord;
 		//FMatrix m = conv * vts2Matrix(o.mv); //* *SwapXY;
 		FTransform t = FTransform(m);
 
@@ -200,95 +201,6 @@ void AVTSActor::Tick(float DeltaTime)
 	*/
 }
 
-FMatrix AVTSActor::vts2Matrix(float proj[16]) {
-	return FMatrix(
-		FPlane(
-			proj[0],
-			proj[1],
-			proj[2],
-			proj[3]
-		),
-		FPlane(
-			proj[4],
-			proj[5],
-			proj[6],
-			proj[7]
-		),
-		FPlane(
-			proj[8],
-			proj[9],
-			proj[10],
-			proj[11]
-		),
-		FPlane(
-			proj[12],
-			proj[13],
-			proj[14],
-			proj[15]
-		)
-	);
-
-}FMatrix AVTSActor::vts2Matrix(double proj[16]) {
-	return FMatrix(
-		FPlane(
-			proj[0],
-			proj[1],
-			proj[2],
-			proj[3]
-		),
-		FPlane(
-			proj[4],
-			proj[5],
-			proj[6],
-			proj[7]
-		),
-		FPlane(
-			proj[8],
-			proj[9],
-			proj[10],
-			proj[11]
-		),
-		FPlane(
-			proj[12],
-			proj[13],
-			proj[14],
-			proj[15]
-		)
-	);
-}
-
-void AVTSActor::matrix2vts(FMatrix mat, double out[16]) {
-	for (size_t i = 0; i < 4; i++)
-	{
-		for (size_t j = 0; j < 4; j++)
-		{
-			out[j+i*4] = mat.M[i][j];
-		}
-	}
-}
-
-FVector AVTSActor::vts2vector(double vec[3]) {
-	return FVector(
-		vec[0],
-		vec[1],
-		vec[2]
-	);
-}
-
-FRotator AVTSActor::vts2rotator(double vec[3]) {
-	return FRotator(
-		vec[0],
-		vec[1],
-		vec[2]
-	);
-}
-
-void AVTSActor::vector2vts(FVector vec, double out[3]) {
-	out[0] = vec.X;
-	out[1] = vec.Y;
-	out[2] = vec.Z;
-}
-
 void AVTSActor::ue2vtsNavigation(FVector vec, double out[3]) {
 	FVector4 point4 = GetActorTransform().ToMatrixWithScale().Inverse().TransformFVector4(FVector4(vec, 1));
 	FVector point = FVector(point4);
@@ -296,7 +208,7 @@ void AVTSActor::ue2vtsNavigation(FVector vec, double out[3]) {
 	FVector ecef;
 	UCoordinateFunctions::UE4ToECEF(point, ecef);
 	double ecefTemp[3];
-	vector2vts(ecef, ecefTemp);
+	UVTSUtil::vector2vts(ecef, ecefTemp);
 
 	double temp[3];
 	map->convert(ecefTemp, temp, vts::Srs::Physical, vts::Srs::Navigation);
@@ -314,7 +226,7 @@ void AVTSActor::makeLocal(double navPt[3]) {
 		p[1] = tmp;
 	}
 
-	FVector v = vts2vector(p) * GetActorTransform().GetScale3D();
+	FVector v = UVTSUtil::vts2vector(p) * GetActorTransform().GetScale3D();
 	if (map->getMapProjected())
 	{
 		SetActorLocation(-v);

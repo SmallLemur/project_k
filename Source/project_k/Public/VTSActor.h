@@ -70,12 +70,6 @@ public:
 	FTransform transformStuff;
 
 private:
-	FMatrix vts2Matrix(float proj[16]);
-	FMatrix vts2Matrix(double proj[16]);
-	FVector vts2vector(double vec[3]);
-	FRotator vts2rotator(double vec[3]);
-	void matrix2vts(FMatrix mat, double out[16]);
-	void vector2vts(FVector vec, double out[3]);
 	std::shared_ptr<vts::Map> map;
 	std::shared_ptr<vts::Camera> cam;
 	std::shared_ptr<vts::Navigation> nav;
