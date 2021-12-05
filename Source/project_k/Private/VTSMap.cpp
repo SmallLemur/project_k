@@ -17,20 +17,17 @@ void AVTSMap::BeginPlay()
 	Super::BeginPlay();
 
 	map = std::make_shared<vts::Map>();
-	map->setMapconfigPath(std::string(TCHAR_TO_UTF8(*ConfigURL)));
+	std::string const s = TCHAR_TO_UTF8(*ConfigURL);
+	map->setMapconfigPath(s);
 	
 	map->callbacks().loadMesh = [this](vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const std::string& debugId) {
 		// https://github.com/melowntech/vts-browser-unity-plugin/blob/9ba1d85cfdc8f4bde621b4ed5f16938ac846b108/src/Vts/Scripts/BrowserUtil/VtsResources.cs
-		auto meshInfo = new FVTSLoadMesh(
-			&info,
-			&spec,
-			FString(debugId.c_str())
-		);
-
-		//meshActor->LoadMesh(meshInfo);
+		LoadMesh(info, spec, FString(debugId.c_str()));
 	};
 
 	map->callbacks().loadTexture = [this](vts::ResourceInfo& info, vts::GpuTextureSpec& spec, const std::string& id) {};
+	map->callbacks().loadFont = [this](vts::ResourceInfo& info, vts::GpuFontSpec& spec, const std::string& id) {};
+	map->callbacks().loadGeodata = [this](vts::ResourceInfo& info, vts::GpuGeodataSpec& spec, const std::string& id) {};
 
 	map->callbacks().mapconfigReady = [this]() {
 		auto pos = map->getMapDefaultPosition();
@@ -78,6 +75,40 @@ void AVTSMap::Tick(float DeltaTime)
 	MakeLocal(pos.point);
 
 	// vts::MapStatistics stat = () &map->statistics();
+}
+
+void AVTSMap::LoadMesh(vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const FString debugId) {
+	TArray<FVector>* vertices = UVTSUtil::ExtractBuffer3(spec, 0);
+
+	TArray<FVector>* transformed = new TArray<FVector>();
+	for (FVector vec : *vertices) {
+		transformed->Add(UVTSUtil::OpenGL2UE.TransformPosition(vec));
+		//transformed->Add(vec);
+	}
+	vertices = transformed;
+
+	TArray<FVector>* normals = new TArray<FVector>();
+	TArray<int32>* triangles = UVTSUtil::LoadTrianglesIndices(spec);
+	TArray<FVector2D>* uvs = new TArray<FVector2D>();
+	TArray<FLinearColor>* colors = new TArray<FLinearColor>();
+	TArray<FProcMeshTangent>* tangents = new TArray<FProcMeshTangent>();
+	for (size_t i = 0; i < vertices->Num(); i++)
+	{
+		normals->Add(FVector(0, 0, 1));
+		uvs->Add(FVector2D(0, 0));
+		colors->Add(FLinearColor(0xff, 0, 0));
+		tangents->Add(FProcMeshTangent(0, 1, 0));
+	}
+
+	std::shared_ptr<FVTSMesh> sp = std::make_shared<FVTSMesh>();
+	sp->Vertices = vertices;
+	sp->Triangles = triangles;
+	sp->Normals = normals;
+	sp->UVs = uvs;
+	sp->Colors = colors;
+	sp->Tangents = tangents;
+
+	info.userData = sp;
 }
 
 void AVTSMap::MakeLocal(double navPt[3]) {

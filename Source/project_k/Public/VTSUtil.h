@@ -48,4 +48,5 @@ public:
 	
 	
 	static const FMatrix SwapYZ;
+	static const FMatrix OpenGL2UE;
 };

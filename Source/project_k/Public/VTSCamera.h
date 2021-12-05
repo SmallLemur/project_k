@@ -46,11 +46,21 @@ public:
 	UPROPERTY(EditAnywhere, Category = "VTS")
 	UCameraComponent* uecam;
 
+	UPROPERTY(EditAnywhere, Category = "VTS")
+	TSubclassOf<AActor> TileBP;
+
 	FTransform uecamTransform;
 	FTransform mapTransform;
 
 
 	std::shared_ptr<vts::Camera> vcam;
+	std::shared_ptr<vts::Navigation> vnav;
 
-	
+	void CameraDraw();
+
+	AActor* InitTile(FVTSMesh* vtsMesh, FTransform transform);
+
+	void UpdateTile(AActor* tile, FTransform transform);
+
+	TMap<FVTSMesh*, TArray<AActor*>> loadedMeshes;
 };

@@ -20,6 +20,36 @@
 
 #include "VTSMap.generated.h"
 
+
+struct FVTSMesh {
+	TArray<FVector>* Vertices;
+	TArray<int32>* Triangles;
+	TArray<FVector>* Normals;
+	TArray<FVector2D>* UVs;
+	TArray<FLinearColor>* Colors;
+	TArray<FProcMeshTangent>* Tangents;
+
+	FVTSMesh(
+		TArray<FVector>* vertices,
+		TArray<int32>* triangles,
+		TArray<FVector>* normals,
+		TArray<FVector2D>* uvs,
+		TArray<FLinearColor>* colors,
+		TArray<FProcMeshTangent>* tangents
+	) {
+		Vertices = vertices;
+		Triangles = triangles;
+		Normals = normals;
+		UVs = uvs;
+		Colors = colors;
+		Tangents = tangents;
+	}
+
+	FVTSMesh() {
+	}
+};
+
+
 UCLASS()
 class PROJECT_K_API AVTSMap : public AActor
 {
@@ -40,7 +70,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(EditAnywhere, Category = "VTS")
-	FString ConfigURL = "https://cdn.melown.com/vts/melown2015/unity/world/mapConfig.json";
+	//FString ConfigURL = "https://cdn.melown.com/vts/melown2015/unity/world/mapConfig.json";
+	FString ConfigURL = "https://cdn.melown.com/mario/store/melown2015/map-config/melown/VTS-Tutorial-map/mapConfig.json";
+
 
 	UPROPERTY(EditAnywhere, Category = "VTS")
 	FString AuthURL = "";
@@ -65,6 +97,8 @@ public:
 	void VtsNavigation2Unity(double vect[3], FVector out);
 
 	void Unity2VtsNavigation(FVector vect, double out[3]);
+
+	void LoadMesh(vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const FString debugId);
 
 	std::shared_ptr<vts::Map> map;
 

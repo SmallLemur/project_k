@@ -117,6 +117,14 @@ const FMatrix UVTSUtil::SwapYZ = FMatrix(
 	FPlane(0, 0, 0, 1)
 );
 
+const FMatrix UVTSUtil::OpenGL2UE = FMatrix(
+	FPlane(0, 1, 0, 0),
+	FPlane(0, 0, 1, 0),
+	FPlane(-1, 0, 0, 0),
+	FPlane(0, 0, 0, 1)
+);
+
+
 
 short UVTSUtil::BytesToInt16(vts::Buffer& input, uint32 startOffset)
 {
