@@ -102,7 +102,8 @@ void UVTSCamera::CameraDraw() {
 			continue;
 		}
 		
-		FMatrix m = UVTSUtil::OpenGL2UE * (UVTSUtil::vts2Matrix(o.mv) * inverseView * inverseProj) * UVTSUtil::OpenGL2UE.Inverse();
+		FMatrix m = UVTSUtil::SwapYZ.Inverse() * (UVTSUtil::vts2Matrix(o.mv) * inverseView) * UVTSUtil::SwapYZ;
+		m = m.ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin) * -1);
 		FTransform t = FTransform(m);
 		
 		FVTSMesh* vtsMesh = (FVTSMesh*)o.mesh.get();

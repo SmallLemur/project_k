@@ -82,7 +82,7 @@ void AVTSMap::LoadMesh(vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const FS
 
 	TArray<FVector>* transformed = new TArray<FVector>();
 	for (FVector vec : *vertices) {
-		transformed->Add(UVTSUtil::OpenGL2UE.TransformPosition(vec));
+		transformed->Add(UVTSUtil::SwapYZ.Inverse().TransformPosition(vec));
 		//transformed->Add(vec);
 	}
 	vertices = transformed;
