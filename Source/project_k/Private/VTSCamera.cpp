@@ -94,6 +94,7 @@ void UVTSCamera::CameraDraw() {
 	vcam->getView(p);
 	FMatrix inverseView = UVTSUtil::vts2Matrix(p).Inverse();
 
+	FMatrix scalem = FMatrix::Identity.ApplyScale(100);
 
 	auto d = vcam->draws();
 	for (auto o : d.opaque)
@@ -102,8 +103,8 @@ void UVTSCamera::CameraDraw() {
 			continue;
 		}
 		
-		FMatrix m = UVTSUtil::SwapYZ.Inverse() * (UVTSUtil::vts2Matrix(o.mv) * inverseView) * UVTSUtil::SwapYZ;
-		m = m.ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin) * -1);
+		FMatrix m = UVTSUtil::SwapYZ.Inverse() * (UVTSUtil::vts2Matrix(o.mv) * inverseView) * UVTSUtil::SwapYZ * scalem;
+		m = m.ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin * 100) * -1);
 		FTransform t = FTransform(m);
 		
 		FVTSMesh* vtsMesh = (FVTSMesh*)o.mesh.get();
