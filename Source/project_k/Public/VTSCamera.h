@@ -63,4 +63,6 @@ public:
 	void UpdateTile(AActor* tile, FTransform transform);
 
 	TMap<FVTSMesh*, TArray<AActor*>> loadedMeshes;
+	
+	FMatrix ScaleVTS2UE = FMatrix::Identity.ApplyScale(100);
 };

@@ -57,19 +57,30 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 	vcam->getView(temp);
 	FMatrix vcamView = UVTSUtil::vts2Matrix(temp);
 
+	vcam->getProj(temp);
+	FMatrix vcamProj = UVTSUtil::vts2Matrix(temp);
+
 	//FMatrix a = (vcamView * Mu).Inverse();
-	FMatrix a = UVTSUtil::SwapYZ * vcamView;
+	FMatrix a = UVTSUtil::SwapYZ.Inverse() * vcamView * UVTSUtil::SwapYZ;// * ScaleVTS2UE;
+	a = a.Inverse().ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin) * -1);
+	
 
-	a.ScaleTranslation(FVector(1, 1, -1));
+	//a.ScaleTranslation(FVector(1, 1, -1));
 	uecamTransform = FTransform(a);
-	uecamTransform.SetLocation(FVector(0,0,0));
+	//uecamTransform.SetLocation(FVector(0,0,0));
 
-	FRotator r = uecamTransform.GetRotation().Rotator();
-	r.Roll += 90;
-	uecamTransform.SetRotation(r.Quaternion());
+	//FRotator r = uecamTransform.GetRotation().Rotator();
+	//r.Roll += 90;
+	//uecamTransform.SetRotation(r.Quaternion());
+
+	
+	//uecamTransform = UVTSUtil::matrix2Transform(a);
+
+	if (!vtsMap->map->getMapconfigReady()) {
+		return;
+	}
 
 	uecam->GetOwner<AActor>()->SetActorTransform(uecamTransform);
-	//uecamTransform = UVTSUtil::matrix2Transform(a);
 
 	double near;
 	double far;
@@ -78,10 +89,11 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 	uecam->SetOrthoNearClipPlane(near);
 	uecam->SetOrthoFarClipPlane(far);
 	vcam->setProj(uecam->FieldOfView, uecam->OrthoNearClipPlane, uecam->OrthoFarClipPlane);
+	
+	double rot[3];
+	rot[0] = 1;
+	vnav->rotate(rot);
 
-	if (!vtsMap->map->getMapconfigReady()) {
-		return;
-	}
 	CameraDraw();
 }
 
@@ -94,7 +106,10 @@ void UVTSCamera::CameraDraw() {
 	vcam->getView(p);
 	FMatrix inverseView = UVTSUtil::vts2Matrix(p).Inverse();
 
-	FMatrix scalem = FMatrix::Identity.ApplyScale(100);
+	TArray<FVTSMesh*> meshIds;
+	TArray<FVTSMesh*> got; // convert to map of lists of tasks
+	
+	loadedMeshes.GetKeys(meshIds);
 
 	auto d = vcam->draws();
 	for (auto o : d.opaque)
@@ -102,16 +117,29 @@ void UVTSCamera::CameraDraw() {
 		if (isnan<float>(o.mv[0])) {
 			continue;
 		}
-		
-		FMatrix m = UVTSUtil::SwapYZ.Inverse() * (UVTSUtil::vts2Matrix(o.mv) * inverseView) * UVTSUtil::SwapYZ * scalem;
-		m = m.ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin * 100) * -1);
-		FTransform t = FTransform(m);
-		
+
 		FVTSMesh* vtsMesh = (FVTSMesh*)o.mesh.get();
 
 		if (!vtsMesh) {
 			return;
 		}
+		got.Add(vtsMesh);
+
+	}
+
+	meshIds.RemoveAll([&](FVTSMesh* id) {
+		return !got.Contains(id);
+	});
+
+	for (FVTSMesh* toDestroy : meshIds) {
+		// destroy
+	}
+
+	for(/*list of tasks in 'got' take the task per mesh and do the thing*/)
+	{
+		FMatrix m = UVTSUtil::SwapYZ.Inverse() * (UVTSUtil::vts2Matrix(o.mv) * inverseView) * UVTSUtil::SwapYZ * ScaleVTS2UE;
+		m = m.ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin * 100) * -1);
+		FTransform t = FTransform(m);
 
 		auto list = loadedMeshes.Find(vtsMesh);
 		if (list == nullptr) {
