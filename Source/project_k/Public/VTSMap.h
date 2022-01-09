@@ -29,6 +29,8 @@ struct FVTSMesh {
 	TArray<FLinearColor>* Colors;
 	TArray<FProcMeshTangent>* Tangents;
 
+	bool destroyed;
+
 	FVTSMesh(
 		TArray<FVector>* vertices,
 		TArray<int32>* triangles,
@@ -43,9 +45,15 @@ struct FVTSMesh {
 		UVs = uvs;
 		Colors = colors;
 		Tangents = tangents;
+		destroyed = false;
 	}
 
 	FVTSMesh() {
+	}
+
+	~FVTSMesh()
+	{
+		destroyed = true;
 	}
 };
 

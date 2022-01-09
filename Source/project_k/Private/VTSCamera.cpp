@@ -106,11 +106,11 @@ void UVTSCamera::CameraDraw() {
 	vcam->getView(p);
 	FMatrix inverseView = UVTSUtil::vts2Matrix(p).Inverse();
 
-	TArray<FVTSMesh*> meshIds;
-	TArray<FVTSMesh*> got; // convert to map of lists of tasks
-	
-	loadedMeshes.GetKeys(meshIds);
+	TArray<FVTSMesh*> loadedMeshIds;
+	loadedMeshes.GetKeys(loadedMeshIds);
 
+	TMap<FVTSMesh*, TArray<vts::DrawSurfaceTask>> tasksByMesh;
+	
 	auto d = vcam->draws();
 	for (auto o : d.opaque)
 	{
@@ -123,36 +123,70 @@ void UVTSCamera::CameraDraw() {
 		if (!vtsMesh) {
 			return;
 		}
-		got.Add(vtsMesh);
 
+		if (tasksByMesh.Contains(vtsMesh)) {
+			tasksByMesh[vtsMesh].Add(o);
+		} else {
+			tasksByMesh.Add(vtsMesh, { o });
+		}
 	}
-
-	meshIds.RemoveAll([&](FVTSMesh* id) {
-		return !got.Contains(id);
-	});
-
-	for (FVTSMesh* toDestroy : meshIds) {
-		// destroy
-	}
-
-	for(/*list of tasks in 'got' take the task per mesh and do the thing*/)
+	
+	TArray<FVTSMesh*> missingMeshes = {};
+	for (auto id : loadedMeshIds)
 	{
-		FMatrix m = UVTSUtil::SwapYZ.Inverse() * (UVTSUtil::vts2Matrix(o.mv) * inverseView) * UVTSUtil::SwapYZ * ScaleVTS2UE;
-		m = m.ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin * 100) * -1);
-		FTransform t = FTransform(m);
+		if (!tasksByMesh.Contains(id)) {
+			missingMeshes.Add(id);
+		}
+	}
+	loadedMeshIds.Empty();
 
-		auto list = loadedMeshes.Find(vtsMesh);
+	for (FVTSMesh* toDestroy : missingMeshes)
+	{
+		for (auto a : loadedMeshes[toDestroy])
+		{
+			a->Destroy(); // maybe object pooling?
+		}
+		loadedMeshes[toDestroy].Empty();
+		loadedMeshes.Remove(toDestroy);
+	}
+	missingMeshes.Empty();
+
+	TArray<FVTSMesh*> incoming;
+	tasksByMesh.GetKeys(incoming);
+	for(auto vtsMesh : incoming)
+	{
+		auto index = 0;
+
+		TArray<AActor*>* list = loadedMeshes.Find(vtsMesh);
 		if (list == nullptr) {
 			list = new TArray<AActor*>();
-			AActor* tile = InitTile(vtsMesh, t);
-			list->Add(tile);
 			loadedMeshes.Add(vtsMesh, *list);
 		}
-		else {
-			AActor* tile = list->GetData()[0];
-			UpdateTile(tile, t);
+
+		for (auto o : tasksByMesh[vtsMesh])
+		{
+			FMatrix m = UVTSUtil::SwapYZ.Inverse() * (UVTSUtil::vts2Matrix(o.mv) * inverseView) * UVTSUtil::SwapYZ * ScaleVTS2UE;
+			m = m.ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin * 100) * -1);
+			FTransform t = FTransform(m);
+
+			if (list->Num() > index) {
+				AActor* tile = list->GetData()[index];
+				UpdateTile(tile, t);
+			}else {
+				AActor* tile = InitTile(vtsMesh, t);
+				list->Add(tile);
+			}
+			index++;
+		}
+		if (index > list->Num()) {
+			for (auto i = list->Num(); i < index; i++)
+			{
+				list->GetData()[i]->Destroy();
+				list->RemoveAt(i);
+			}
 		}
 	}
+	incoming.Empty();
 }
 
 AActor* UVTSCamera::InitTile(FVTSMesh* vtsMesh, FTransform transform) {
