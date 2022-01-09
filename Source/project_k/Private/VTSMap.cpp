@@ -107,6 +107,7 @@ void AVTSMap::LoadMesh(vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const FS
 	sp->UVs = uvs;
 	sp->Colors = colors;
 	sp->Tangents = tangents;
+	sp->DebugId = debugId;
 
 	info.userData = sp;
 }

@@ -106,10 +106,10 @@ void UVTSCamera::CameraDraw() {
 	vcam->getView(p);
 	FMatrix inverseView = UVTSUtil::vts2Matrix(p).Inverse();
 
-	TArray<FVTSMesh*> loadedMeshIds;
+	TArray<FString> loadedMeshIds;
 	loadedMeshes.GetKeys(loadedMeshIds);
 
-	TMap<FVTSMesh*, TArray<vts::DrawSurfaceTask>> tasksByMesh;
+	TMap<FString, TArray<vts::DrawSurfaceTask>> tasksByMesh;
 	
 	auto d = vcam->draws();
 	for (auto o : d.opaque)
@@ -119,70 +119,71 @@ void UVTSCamera::CameraDraw() {
 		}
 
 		FVTSMesh* vtsMesh = (FVTSMesh*)o.mesh.get();
-
+		
 		if (!vtsMesh) {
 			return;
 		}
 
-		if (tasksByMesh.Contains(vtsMesh)) {
-			tasksByMesh[vtsMesh].Add(o);
+		if (tasksByMesh.Contains(vtsMesh->DebugId)) {
+			tasksByMesh[vtsMesh->DebugId].Add(o);
 		} else {
-			tasksByMesh.Add(vtsMesh, { o });
+			tasksByMesh.Add(vtsMesh->DebugId, { o });
 		}
 	}
 	
-	TArray<FVTSMesh*> missingMeshes = {};
+	TArray<FString> missingMeshIds = {};
 	for (auto id : loadedMeshIds)
 	{
 		if (!tasksByMesh.Contains(id)) {
-			missingMeshes.Add(id);
+			missingMeshIds.Add(id);
 		}
 	}
 	loadedMeshIds.Empty();
 
-	for (FVTSMesh* toDestroy : missingMeshes)
+	for (FString id : missingMeshIds)
 	{
-		for (auto a : loadedMeshes[toDestroy])
+		for (auto a : loadedMeshes[id])
 		{
 			a->Destroy(); // maybe object pooling?
 		}
-		loadedMeshes[toDestroy].Empty();
-		loadedMeshes.Remove(toDestroy);
+		loadedMeshes[id].Empty();
+		loadedMeshes.Remove(id); // for some reason we're not properly unloading
 	}
-	missingMeshes.Empty();
+	missingMeshIds.Empty();
 
-	TArray<FVTSMesh*> incoming;
+	TArray<FString> incoming;
 	tasksByMesh.GetKeys(incoming);
-	for(auto vtsMesh : incoming)
+	for(auto id : incoming)
 	{
 		auto index = 0;
 
-		TArray<AActor*>* list = loadedMeshes.Find(vtsMesh);
-		if (list == nullptr) {
-			list = new TArray<AActor*>();
-			loadedMeshes.Add(vtsMesh, *list);
+		TArray<AActor*>* actors = loadedMeshes.Find(id);
+		if (actors == nullptr) {
+			actors = new TArray<AActor*>();
+			loadedMeshes.Add(id, *actors);
 		}
 
-		for (auto o : tasksByMesh[vtsMesh])
+		for (auto o : tasksByMesh[id])
 		{
 			FMatrix m = UVTSUtil::SwapYZ.Inverse() * (UVTSUtil::vts2Matrix(o.mv) * inverseView) * UVTSUtil::SwapYZ * ScaleVTS2UE;
 			m = m.ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin * 100) * -1);
 			FTransform t = FTransform(m);
 
-			if (list->Num() > index) {
-				AActor* tile = list->GetData()[index];
+			if (actors->Num() > index) {
+				AActor* tile = actors->GetData()[index];
 				UpdateTile(tile, t);
 			}else {
-				AActor* tile = InitTile(vtsMesh, t);
-				list->Add(tile);
+				FVTSMesh* mesh = (FVTSMesh*) o.mesh.get();
+				AActor* tile = InitTile(mesh, t);
+				actors->Add(tile);
 			}
 			index++;
 		}
-		if (index > list->Num()) {
-			for (auto i = list->Num(); i < index; i++)
+		if (index > actors->Num()) {
+			for (auto i = actors->Num(); i < index; i++)
 			{
-				list->GetData()[i]->Destroy();
-				list->RemoveAt(i);
+				actors->GetData()[i]->Destroy();
+				actors->RemoveAt(i);
 			}
 		}
 	}

@@ -28,8 +28,7 @@ struct FVTSMesh {
 	TArray<FVector2D>* UVs;
 	TArray<FLinearColor>* Colors;
 	TArray<FProcMeshTangent>* Tangents;
-
-	bool destroyed;
+	FString DebugId;
 
 	FVTSMesh(
 		TArray<FVector>* vertices,
@@ -45,7 +44,6 @@ struct FVTSMesh {
 		UVs = uvs;
 		Colors = colors;
 		Tangents = tangents;
-		destroyed = false;
 	}
 
 	FVTSMesh() {
@@ -53,7 +51,8 @@ struct FVTSMesh {
 
 	~FVTSMesh()
 	{
-		destroyed = true;
+
+		GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Red, TEXT("Destroy "+DebugId));
 	}
 };
 
