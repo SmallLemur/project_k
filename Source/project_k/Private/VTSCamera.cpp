@@ -91,8 +91,16 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 	vcam->setProj(uecam->FieldOfView, uecam->OrthoNearClipPlane, uecam->OrthoFarClipPlane);
 	
 	double rot[3];
-	rot[0] = 1;
+	rot[2] = 1;
 	vnav->rotate(rot);
+
+	double pos[3];
+	vnav->getPoint(pos);
+	// Get current time
+	double t = FPlatformTime::Seconds()/100;
+
+	pos[2] = 2000+100000+100000*FMath::Sin(t);
+	vnav->setPoint(pos);
 
 	CameraDraw();
 }
