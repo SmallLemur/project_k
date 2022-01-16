@@ -50,37 +50,31 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 	// Assuming VTS data control (https://github.com/melowntech/vts-browser-unity-plugin/blob/722f4e591d08d4a0b5aa983e824f177caa4b7904/src/Vts/Scripts/BrowserUtil/VtsCameraBase.cs)
 	// double[] Mu = Math.Mul44x44(VtsUtil.U2V44(mapTrans.localToWorldMatrix), VtsUtil.U2V44(VtsUtil.SwapYZ));
 	
-	
-	FMatrix Mu = mapTransform.ToMatrixWithScale() * UVTSUtil::SwapYZ;
-	
+	if (!vtsMap->map->getMapconfigReady()) {
+		return;
+	}
+	/*
 	double temp[16];
 	vcam->getView(temp);
 	FMatrix vcamView = UVTSUtil::vts2Matrix(temp);
 
-	vcam->getProj(temp);
-	FMatrix vcamProj = UVTSUtil::vts2Matrix(temp);
+	//FMatrix m = UVTSUtil::SwapYZ.Inverse() * vcamView * UVTSUtil::SwapYZ;// *ScaleVTS2UE;
+	//m = m.Inverse().ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin) * -1);
 
-	//FMatrix a = (vcamView * Mu).Inverse();
-	FMatrix a = UVTSUtil::SwapYZ.Inverse() * vcamView * UVTSUtil::SwapYZ;// * ScaleVTS2UE;
-	a = a.Inverse().ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin) * -1);
-	
+	FMatrix m = UVTSUtil::SwapYZ.Inverse() * vcamView;// ;
+	m = m.ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin) * -1);
+	m = m * UVTSUtil::SwapYZ;
 
-	//a.ScaleTranslation(FVector(1, 1, -1));
-	uecamTransform = FTransform(a);
-	//uecamTransform.SetLocation(FVector(0,0,0));
-
-	//FRotator r = uecamTransform.GetRotation().Rotator();
-	//r.Roll += 90;
-	//uecamTransform.SetRotation(r.Quaternion());
-
-	
-	//uecamTransform = UVTSUtil::matrix2Transform(a);
-
-	if (!vtsMap->map->getMapconfigReady()) {
-		return;
-	}
-
+	uecamTransform = FTransform(m);
 	uecam->GetOwner<AActor>()->SetActorTransform(uecamTransform);
+	*/
+
+	auto mapPosition = vnav->getPosition();//vtsMap->map->getMapDefaultPosition();
+	FVector mPos = UVTSUtil::vts2vector(mapPosition.point);
+	double pos[3];
+	vtsMap->map->convert(mapPosition.point, pos, vts::Srs::Navigation, vts::Srs::Physical);
+
+	uecam->GetOwner<AActor>()->SetActorLocation(UVTSUtil::vts2vector(pos) - vtsMap->PhysicalOrigin);
 
 	double near;
 	double far;
@@ -92,9 +86,9 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 	
 	double rot[3];
 	rot[2] = 1;
-	vnav->rotate(rot);
+	//vnav->rotate(rot);
 
-	double pos[3];
+	//double pos[3];
 	vnav->getPoint(pos);
 	// Get current time
 	double t = FPlatformTime::Seconds()/100;
