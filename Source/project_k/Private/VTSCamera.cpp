@@ -121,7 +121,7 @@ void UVTSCamera::CameraDraw() {
 		FVTSMesh* vtsMesh = (FVTSMesh*)o.mesh.get();
 		
 		if (!vtsMesh) {
-			return;
+			continue;
 		}
 
 		if (tasksByMesh.Contains(vtsMesh->DebugId)) {
@@ -142,12 +142,14 @@ void UVTSCamera::CameraDraw() {
 
 	for (FString id : missingMeshIds)
 	{
-		for (auto a : loadedMeshes[id])
+		TArray<AActor*>* actors = loadedMeshes[id];
+		for (auto a : *actors)
 		{
 			a->Destroy(); // maybe object pooling?
+			
 		}
-		loadedMeshes[id].Empty();
-		loadedMeshes.Remove(id); // for some reason we're not properly unloading
+		actors->Empty();
+		loadedMeshes.Remove(id);
 	}
 	missingMeshIds.Empty();
 
@@ -156,13 +158,13 @@ void UVTSCamera::CameraDraw() {
 	for(auto id : incoming)
 	{
 		auto index = 0;
-
-		TArray<AActor*>* actors = loadedMeshes.Find(id);
+		
+		TArray<AActor*>* actors = loadedMeshes.FindOrAdd(id);
 		if (actors == nullptr) {
 			actors = new TArray<AActor*>();
-			loadedMeshes.Add(id, *actors);
+			loadedMeshes.Add(id, actors);
 		}
-
+		
 		for (auto o : tasksByMesh[id])
 		{
 			FMatrix m = UVTSUtil::SwapYZ.Inverse() * (UVTSUtil::vts2Matrix(o.mv) * inverseView) * UVTSUtil::SwapYZ * ScaleVTS2UE;

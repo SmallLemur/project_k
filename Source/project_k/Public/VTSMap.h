@@ -51,8 +51,7 @@ struct FVTSMesh {
 
 	~FVTSMesh()
 	{
-
-		GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Red, TEXT("Destroy "+DebugId));
+		//GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Red, TEXT("Destroy "+DebugId));
 	}
 };
 
