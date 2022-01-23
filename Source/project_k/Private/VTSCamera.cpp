@@ -44,6 +44,44 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	if (vtsMap->map->getMapconfigReady() && flag) {
+		double p[16];
+		vcam->getView(p);
+
+		FVector loc = uecam->GetOwner<AActor>()->GetActorLocation();
+		FTransform tr = uecam->GetOwner<AActor>()->GetActorTransform();
+		uecamTransform = uecam->GetComponentTransform();
+
+		auto v = UVTSUtil::vts2Matrix(p);
+		v.RemoveTranslation();
+
+		//FMatrix translation = UVTSUtil::SwapYZ * FMatrix::Identity.ConcatTranslation((loc + vtsMap->PhysicalOrigin) * .01);
+		//.ConcatTranslation(vtsMap->PhysicalOrigin)
+		FMatrix translation = UVTSUtil::SwapYZ * FMatrix::Identity.ConcatTranslation(loc*.01).ConcatTranslation(vtsMap->PhysicalOrigin) * UVTSUtil::SwapYZ.Inverse();
+		//FMatrix transformed = /*UVTSUtil::SwapYZ.Inverse() * */ translation * UVTSUtil::SwapYZ;
+		//v = v.ConcatTranslation((loc + vtsMap->PhysicalOrigin) * .01);
+		//double t[16];
+		//UVTSUtil::matrix2vts(translation, t);
+		//vcam->setView(t);
+		double pos[3];
+		double trans[3];
+		UVTSUtil::vector2vts(translation.GetOrigin(), trans);
+		vtsMap->map->convert(trans, pos, vts::Srs::Physical, vts::Srs::Navigation);
+
+
+		
+//		double trans[3];
+		//double pos[3];
+		//UVTSUtil::vector2vts(UVTSUtil::SwapYZ.TransformVector((loc + vtsMap->PhysicalOrigin) * .01), trans);
+		//vtsMap->map->convert(trans, pos, vts::Srs::Physical, vts::Srs::Navigation);
+		//vnav->setPoint(pos);
+		//trans[0] = 10;
+		//trans[2] = 1000;
+		//vnav->pan(trans);
+		vnav->setPoint(pos);
+	}
+
+
 	vcam->renderUpdate();
 
 
@@ -53,6 +91,7 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 	if (!vtsMap->map->getMapconfigReady()) {
 		return;
 	}
+	
 	/*
 	double temp[16];
 	vcam->getView(temp);
@@ -68,33 +107,46 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 	uecamTransform = FTransform(m);
 	uecam->GetOwner<AActor>()->SetActorTransform(uecamTransform);
 	*/
+	if (!flag) {
+		auto mapPosition = vnav->getPosition();//vtsMap->map->getMapDefaultPosition();
+		double pos[3];
+		vtsMap->map->convert(mapPosition.point, pos, vts::Srs::Navigation, vts::Srs::Physical);
 
-	auto mapPosition = vnav->getPosition();//vtsMap->map->getMapDefaultPosition();
-	FVector mPos = UVTSUtil::vts2vector(mapPosition.point);
-	double pos[3];
-	vtsMap->map->convert(mapPosition.point, pos, vts::Srs::Navigation, vts::Srs::Physical);
 
-	uecam->GetOwner<AActor>()->SetActorLocation(UVTSUtil::vts2vector(pos) - vtsMap->PhysicalOrigin);
+		FMatrix m = UVTSUtil::SwapYZ.Inverse() * FMatrix::Identity.ConcatTranslation((UVTSUtil::vts2vector(pos) - vtsMap->PhysicalOrigin) * 100) * UVTSUtil::SwapYZ;
+		uecam->GetOwner<AActor>()->SetActorTransform(FTransform(m));
 
-	double near;
-	double far;
-	vcam->suggestedNearFar(near, far);
+		double near;
+		double far;
+		vcam->suggestedNearFar(near, far);
 
-	uecam->SetOrthoNearClipPlane(near);
-	uecam->SetOrthoFarClipPlane(far);
-	vcam->setProj(uecam->FieldOfView, uecam->OrthoNearClipPlane, uecam->OrthoFarClipPlane);
+		uecam->SetOrthoNearClipPlane(near);
+		uecam->SetOrthoFarClipPlane(far);
+		vcam->setProj(uecam->FieldOfView, uecam->OrthoNearClipPlane, uecam->OrthoFarClipPlane);
+
+		flag = true;
+		return;
+	}
 	
-	double rot[3];
-	rot[2] = 1;
+	//mPos = transformed.TransformPosition(FVector::ZeroVector);
+	//double camPosition[3];
+	//UVTSUtil::vector2vts(mPos, camPosition);
+	//vtsMap->map->convert(camPosition, pos, vts::Srs::Physical, vts::Srs::Navigation);
+
+
+	//double rot[3];
+	//rot[2] = 1;
 	//vnav->rotate(rot);
 
 	//double pos[3];
-	vnav->getPoint(pos);
+	//vnav->getPoint(pos);
 	// Get current time
-	double t = FPlatformTime::Seconds()/100;
+	//double t = FPlatformTime::Seconds()/100;
 
-	pos[2] = 2000+100000+100000*FMath::Sin(t);
-	vnav->setPoint(pos);
+	//pos[2] = 2000 + 100000 + 100000*FMath::Sin(FMath::Fmod(t,2*PI));
+	
+	//pos[2] += 10000;
+	//vnav->setPoint(pos);
 
 	CameraDraw();
 }
@@ -114,6 +166,7 @@ void UVTSCamera::CameraDraw() {
 	TMap<FString, TArray<vts::DrawSurfaceTask>> tasksByMesh;
 	
 	auto d = vcam->draws();
+	
 	for (auto o : d.opaque)
 	{
 		if (isnan<float>(o.mv[0])) {

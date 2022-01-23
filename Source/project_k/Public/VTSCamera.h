@@ -65,4 +65,6 @@ public:
 	TMap<FString, TArray<AActor*>*> loadedMeshes;
 	
 	FMatrix ScaleVTS2UE = FMatrix::Identity.ApplyScale(100);
+
+	bool flag = false;
 };
