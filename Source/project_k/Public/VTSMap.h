@@ -75,10 +75,15 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(BlueprintCallable)
+	FVector VTSNavToPhysical(FVector point);
+	UFUNCTION(BlueprintCallable)
+	FVector VTSPhysicalToNav(FVector point);
+
 	UPROPERTY(EditAnywhere, Category = "VTS")
 	//FString ConfigURL = "https://cdn.melown.com/vts/melown2015/unity/world/mapConfig.json";
-	FString ConfigURL = "https://cdn.melown.com/mario/store/melown2015/map-config/melown/VTS-Tutorial-map/mapConfig.json";
-
+	//FString ConfigURL = "https://cdn.melown.com/mario/store/melown2015/map-config/melown/VTS-Tutorial-map/mapConfig.json";
+	FString ConfigURL = "https://cdn.melown.com/vts/melown2015/unity/world/mapConfig.json";
 
 	UPROPERTY(EditAnywhere, Category = "VTS")
 	FString AuthURL = "";
@@ -98,12 +103,21 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "VTS Position")
 	FVector UEOrigin;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VTS Markers")
+	TArray<FVector> LLAMarkers;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VTS Markers")
+	TArray<FVector> PhysicalMarkers;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VTS Markers")
+	TArray<FVector> UEMarkers;
+
 	void MakeLocal(double navPt[3]);
 
 	void VtsNavigation2Unity(double vect[3], FVector out);
 
 	void Unity2VtsNavigation(FVector vect, double out[3]);
-
+	
 	void LoadMesh(vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const FString debugId);
 
 	std::shared_ptr<vts::Map> map;

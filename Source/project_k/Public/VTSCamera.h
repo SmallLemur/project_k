@@ -49,6 +49,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "VTS")
 	TSubclassOf<AActor> TileBP;
 
+	UPROPERTY(EditAnywhere, Category = "VTS")
+	FVector vector;
+
 	FTransform uecamTransform;
 	FTransform mapTransform;
 

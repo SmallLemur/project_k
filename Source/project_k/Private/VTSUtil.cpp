@@ -110,6 +110,10 @@ void UVTSUtil::vector2vts(FVector vec, double out[3]) {
 	out[2] = vec.Z;
 }
 
+void UVTSUtil::rotator2vts(FRotator rot, double out[3]) {
+	UVTSUtil::vector2vts(rot.Euler(), out);
+}
+
 const FMatrix UVTSUtil::SwapYZ = FMatrix(
 	FPlane(1, 0, 0, 0),
 	FPlane(0, 0, 1, 0),

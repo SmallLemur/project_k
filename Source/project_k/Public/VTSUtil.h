@@ -27,6 +27,8 @@ class PROJECT_K_API UVTSUtil : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
+
+
 	static FMatrix vts2Matrix(float proj[16]);
 	static FMatrix vts2Matrix(double proj[16]);
 	static FTransform matrix2Transform(FMatrix m);
@@ -34,6 +36,7 @@ public:
 	static FRotator vts2rotator(double vec[3]);
 	static void matrix2vts(FMatrix mat, double out[16]);
 	static void vector2vts(FVector vec, double out[3]);
+	static void rotator2vts(FRotator vec, double out[3]);
 
 	static short BytesToInt16(vts::Buffer& input, uint32 startOffset);
 	static unsigned short BytesToUInt16(vts::Buffer& input, uint32 startOffset);

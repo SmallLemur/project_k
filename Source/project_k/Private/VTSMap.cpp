@@ -41,6 +41,8 @@ void AVTSMap::BeginPlay()
 
 		UCoordinateFunctions::ECEFToUE4(PhysicalOrigin, UEOrigin);
 
+		GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Cyan, LlaOrigin.ToString());
+
 		//orientation = UVTSUtil::vts2rotator(pos.orientation);
 
 		//Camera->SetActorLocation(origin);
@@ -66,7 +68,7 @@ void AVTSMap::Tick(float DeltaTime)
 
 	map->renderUpdate(DeltaTime);
 	map->dataUpdate();
-
+	
 	if (!map->getMapconfigReady()) {
 		return;
 	}
@@ -75,6 +77,28 @@ void AVTSMap::Tick(float DeltaTime)
 	MakeLocal(pos.point);
 
 	// vts::MapStatistics stat = () &map->statistics();
+}
+
+FVector AVTSMap::VTSNavToPhysical(FVector point) {
+	//double temp[3];
+	double p[3];
+	UVTSUtil::vector2vts(point,p);
+	FVector out = FVector();
+	VtsNavigation2Unity(p, out);
+	return out;
+	//map->convert(p, temp, vts::Srs::Navigation, vts::Srs::Physical);
+	//return UVTSUtil::vts2vector(temp);
+}
+
+FVector AVTSMap::VTSPhysicalToNav(FVector point) {
+	//double temp[3];
+	double p[3];
+	//UVTSUtil::vector2vts(point, p);
+	Unity2VtsNavigation(point, p);
+	return UVTSUtil::vts2vector(p);
+
+	//map->convert(p, temp, vts::Srs::Physical, vts::Srs::Navigation);
+	//return UVTSUtil::vts2vector(temp);
 }
 
 void AVTSMap::LoadMesh(vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const FString debugId) {
@@ -142,6 +166,10 @@ void AVTSMap::MakeLocal(double navPt[3]) {
 
 
 void AVTSMap::VtsNavigation2Unity(double point[3], FVector out) {
+	if (!map->getMapconfigAvailable()) {
+		return;
+	}
+
 	double physical[3];
 	map->convert(point, physical, vts::Srs::Navigation, vts::Srs::Physical);
 
@@ -158,6 +186,9 @@ void AVTSMap::VtsNavigation2Unity(double point[3], FVector out) {
 
 
 void  AVTSMap::Unity2VtsNavigation(FVector vect, double out[3]){
+	if (!map->getMapconfigAvailable()) {
+		return;
+	}
 	// convert from unity world to (local) vts physical
 	FVector4 point4 = FVector4(vect, 1);
 	FVector p = FVector(this->GetTransform().Inverse().TransformFVector4(point4));

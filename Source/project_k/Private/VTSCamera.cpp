@@ -45,70 +45,31 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	if (vtsMap->map->getMapconfigReady() && flag) {
-		double p[16];
-		vcam->getView(p);
-
-		FVector loc = uecam->GetOwner<AActor>()->GetActorLocation();
 		FTransform tr = uecam->GetOwner<AActor>()->GetActorTransform();
 		uecamTransform = uecam->GetComponentTransform();
 
-		auto v = UVTSUtil::vts2Matrix(p);
-		v.RemoveTranslation();
-
-		//FMatrix translation = UVTSUtil::SwapYZ * FMatrix::Identity.ConcatTranslation((loc + vtsMap->PhysicalOrigin) * .01);
-		//.ConcatTranslation(vtsMap->PhysicalOrigin)
-		FMatrix translation = UVTSUtil::SwapYZ * FMatrix::Identity.ConcatTranslation(loc*.01).ConcatTranslation(vtsMap->PhysicalOrigin) * UVTSUtil::SwapYZ.Inverse();
-		//FMatrix transformed = /*UVTSUtil::SwapYZ.Inverse() * */ translation * UVTSUtil::SwapYZ;
-		//v = v.ConcatTranslation((loc + vtsMap->PhysicalOrigin) * .01);
-		//double t[16];
-		//UVTSUtil::matrix2vts(translation, t);
-		//vcam->setView(t);
+		FVector o = tr.GetTranslation();
+		FMatrix mc = UVTSUtil::SwapYZ * FMatrix::Identity.ConcatTranslation((o * .01) + vtsMap->PhysicalOrigin);// *UVTSUtil::SwapYZ.Inverse();
+		FVector mco = mc.GetOrigin();
 		double pos[3];
 		double trans[3];
-		UVTSUtil::vector2vts(translation.GetOrigin(), trans);
+		UVTSUtil::vector2vts(mco, trans);
 		vtsMap->map->convert(trans, pos, vts::Srs::Physical, vts::Srs::Navigation);
-
-
-		
-//		double trans[3];
-		//double pos[3];
-		//UVTSUtil::vector2vts(UVTSUtil::SwapYZ.TransformVector((loc + vtsMap->PhysicalOrigin) * .01), trans);
-		//vtsMap->map->convert(trans, pos, vts::Srs::Physical, vts::Srs::Navigation);
-		//vnav->setPoint(pos);
-		//trans[0] = 10;
-		//trans[2] = 1000;
-		//vnav->pan(trans);
 		vnav->setPoint(pos);
+		
+		double rot[3];
+		UVTSUtil::rotator2vts(uecam->GetOwner<AActor>()->GetActorRotation(), rot);
+		vnav->setRotation(rot);
 	}
-
 
 	vcam->renderUpdate();
 
-
-	// Assuming VTS data control (https://github.com/melowntech/vts-browser-unity-plugin/blob/722f4e591d08d4a0b5aa983e824f177caa4b7904/src/Vts/Scripts/BrowserUtil/VtsCameraBase.cs)
-	// double[] Mu = Math.Mul44x44(VtsUtil.U2V44(mapTrans.localToWorldMatrix), VtsUtil.U2V44(VtsUtil.SwapYZ));
-	
 	if (!vtsMap->map->getMapconfigReady()) {
 		return;
 	}
 	
-	/*
-	double temp[16];
-	vcam->getView(temp);
-	FMatrix vcamView = UVTSUtil::vts2Matrix(temp);
-
-	//FMatrix m = UVTSUtil::SwapYZ.Inverse() * vcamView * UVTSUtil::SwapYZ;// *ScaleVTS2UE;
-	//m = m.Inverse().ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin) * -1);
-
-	FMatrix m = UVTSUtil::SwapYZ.Inverse() * vcamView;// ;
-	m = m.ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin) * -1);
-	m = m * UVTSUtil::SwapYZ;
-
-	uecamTransform = FTransform(m);
-	uecam->GetOwner<AActor>()->SetActorTransform(uecamTransform);
-	*/
 	if (!flag) {
-		auto mapPosition = vnav->getPosition();//vtsMap->map->getMapDefaultPosition();
+		auto mapPosition = vnav->getPosition();
 		double pos[3];
 		vtsMap->map->convert(mapPosition.point, pos, vts::Srs::Navigation, vts::Srs::Physical);
 
@@ -124,30 +85,13 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 		uecam->SetOrthoFarClipPlane(far);
 		vcam->setProj(uecam->FieldOfView, uecam->OrthoNearClipPlane, uecam->OrthoFarClipPlane);
 
+		double rot[3];
+		vnav->getRotation(rot);
+		uecam->GetOwner<AActor>()->SetActorRotation(UVTSUtil::vts2rotator(rot));
+
 		flag = true;
 		return;
 	}
-	
-	//mPos = transformed.TransformPosition(FVector::ZeroVector);
-	//double camPosition[3];
-	//UVTSUtil::vector2vts(mPos, camPosition);
-	//vtsMap->map->convert(camPosition, pos, vts::Srs::Physical, vts::Srs::Navigation);
-
-
-	//double rot[3];
-	//rot[2] = 1;
-	//vnav->rotate(rot);
-
-	//double pos[3];
-	//vnav->getPoint(pos);
-	// Get current time
-	//double t = FPlatformTime::Seconds()/100;
-
-	//pos[2] = 2000 + 100000 + 100000*FMath::Sin(FMath::Fmod(t,2*PI));
-	
-	//pos[2] += 10000;
-	//vnav->setPoint(pos);
-
 	CameraDraw();
 }
 
@@ -276,3 +220,21 @@ AActor* UVTSCamera::InitTile(FVTSMesh* vtsMesh, FTransform transform) {
 void UVTSCamera::UpdateTile(AActor* tile, FTransform transform) {
 	tile->SetActorTransform(transform);
 }
+
+
+
+
+
+
+
+int CalculateFibonacci(int N) {
+	if (N <= 1) {
+		return N;
+	}
+	return CalculateFibonacci(N - 1) + CalculateFibonacci(N - 2);
+}
+
+
+
+
+
