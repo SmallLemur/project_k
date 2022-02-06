@@ -41,6 +41,6 @@ void ALoggingActor::Tick(float DeltaTime)
 }
 
 void ALoggingActor::UeLog(const char *msg) {
-	GEngine->AddOnScreenDebugMessage(-1, 8.0f, FColor::Yellow, FString(msg));
+	//GEngine->AddOnScreenDebugMessage(-1, 8.0f, FColor::Yellow, FString(msg));
 	FFileHelper::SaveStringToFile(FString(msg), TEXT("vts.log"));
 }

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "KismetProceduralMeshLibrary.h"
 
 #include <vts-browser/map.hpp>
 #include <vts-browser/camera.hpp>
@@ -14,6 +15,7 @@
 #include <vts-browser/log.h>
 #include <vts-browser/mapCallbacks.hpp>
 #include <vts-browser/resources.hpp>
+#include <vts-browser/geodata.hpp>
 #include <CoordinateFunctions.h>
 #include <VTSMeshActor.h>
 #include <VTSUtil.h>
@@ -70,7 +72,6 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -83,7 +84,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "VTS")
 	//FString ConfigURL = "https://cdn.melown.com/vts/melown2015/unity/world/mapConfig.json";
 	//FString ConfigURL = "https://cdn.melown.com/mario/store/melown2015/map-config/melown/VTS-Tutorial-map/mapConfig.json";
-	FString ConfigURL = "https://cdn.melown.com/vts/melown2015/unity/world/mapConfig.json";
+	//FString ConfigURL = "http://localhost:8070/mapproxy/melown2015/surface/examples/srtm1-n47-e013/mapConfig.json";
+	//FString ConfigURL = "http://localhost:8070/mapproxy/melown2015/surface/.system/surface-spheroid/mapConfig.json";
+	FString ConfigURL = "http://localhost:8070/mapproxy/mars-qsc/surface/mars-case-study/mars-mola-dem/mapConfig.json";
+	//FString ConfigURL = "https://cdn.melown.com/mario/store/mercury-provisional/map-config/melown/mercury-messenger/mapConfig.json";
+
+
 
 	UPROPERTY(EditAnywhere, Category = "VTS")
 	FString AuthURL = "";
@@ -119,6 +125,7 @@ public:
 	void Unity2VtsNavigation(FVector vect, double out[3]);
 	
 	void LoadMesh(vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const FString debugId);
+	void LoadGeodata(vts::ResourceInfo& info, vts::GpuGeodataSpec& spec, const FString debugId);
 
 	std::shared_ptr<vts::Map> map;
 

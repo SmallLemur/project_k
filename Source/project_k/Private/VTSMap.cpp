@@ -27,13 +27,14 @@ void AVTSMap::BeginPlay()
 
 	map->callbacks().loadTexture = [this](vts::ResourceInfo& info, vts::GpuTextureSpec& spec, const std::string& id) {};
 	map->callbacks().loadFont = [this](vts::ResourceInfo& info, vts::GpuFontSpec& spec, const std::string& id) {};
-	map->callbacks().loadGeodata = [this](vts::ResourceInfo& info, vts::GpuGeodataSpec& spec, const std::string& id) {};
+	map->callbacks().loadGeodata = [this](vts::ResourceInfo& info, vts::GpuGeodataSpec& spec, const std::string& id) {
+		LoadGeodata(info, spec, FString(id.c_str()));
+	};
 
 	map->callbacks().mapconfigReady = [this]() {
 		auto pos = map->getMapDefaultPosition();
 		LlaOrigin = UVTSUtil::vts2vector(pos.point);
 	
-		GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Cyan, LlaOrigin.ToString());
 
 		double temp[3];
 		map->convert(pos.point, temp, vts::Srs::Navigation, vts::Srs::Physical);
@@ -118,12 +119,14 @@ void AVTSMap::LoadMesh(vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const FS
 	TArray<FProcMeshTangent>* tangents = new TArray<FProcMeshTangent>();
 	for (size_t i = 0; i < vertices->Num(); i++)
 	{
-		normals->Add(FVector(0, 0, 1));
+		//normals->Add(FVector(0, 0, 1));
 		uvs->Add(FVector2D(0, 0));
-		colors->Add(FLinearColor(0xff, 0, 0));
-		tangents->Add(FProcMeshTangent(0, 1, 0));
+		colors->Add(FLinearColor(158, 140, 115)); //0xff,0,0
+		//tangents->Add(FProcMeshTangent(0, 1, 0));
 	}
 
+	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(*vertices, *triangles, *uvs, *normals, *tangents);
+	
 	std::shared_ptr<FVTSMesh> sp = std::make_shared<FVTSMesh>();
 	sp->Vertices = vertices;
 	sp->Triangles = triangles;
@@ -134,6 +137,11 @@ void AVTSMap::LoadMesh(vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const FS
 	sp->DebugId = debugId;
 
 	info.userData = sp;
+}
+
+void AVTSMap::LoadGeodata(vts::ResourceInfo& info, vts::GpuGeodataSpec& spec, const FString debugId) {
+	GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Cyan, debugId);
+	
 }
 
 void AVTSMap::MakeLocal(double navPt[3]) {

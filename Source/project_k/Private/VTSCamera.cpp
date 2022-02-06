@@ -60,6 +60,7 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 		double rot[3];
 		UVTSUtil::rotator2vts(uecam->GetOwner<AActor>()->GetActorRotation(), rot);
 		vnav->setRotation(rot);
+		
 	}
 
 	vcam->renderUpdate();
@@ -189,6 +190,8 @@ void UVTSCamera::CameraDraw() {
 		}
 	}
 	incoming.Empty();
+	
+	
 }
 
 AActor* UVTSCamera::InitTile(FVTSMesh* vtsMesh, FTransform transform) {
@@ -227,14 +230,18 @@ void UVTSCamera::UpdateTile(AActor* tile, FTransform transform) {
 
 
 
-int CalculateFibonacci(int N) {
-	if (N <= 1) {
-		return N;
-	}
-	return CalculateFibonacci(N - 1) + CalculateFibonacci(N - 2);
-}
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+ 

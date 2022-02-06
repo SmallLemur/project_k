@@ -19,6 +19,7 @@
 #include "VTSMap.h"
 #include "VTSUtil.h"
 #include <CoordinateFunctions.h>
+#include "Runtime/Engine/Classes/Engine/World.h"
 
 #include "VTSCamera.generated.h"
 
@@ -54,7 +55,6 @@ public:
 
 	FTransform uecamTransform;
 	FTransform mapTransform;
-
 
 	std::shared_ptr<vts::Camera> vcam;
 	std::shared_ptr<vts::Navigation> vnav;
