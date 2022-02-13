@@ -22,15 +22,17 @@
 
 #include "VTSMap.generated.h"
 
+struct FVTSDebugId {
+	FString DebugId;
+};
 
-struct FVTSMesh {
+struct FVTSMesh : public FVTSDebugId {
 	TArray<FVector>* Vertices;
 	TArray<int32>* Triangles;
 	TArray<FVector>* Normals;
 	TArray<FVector2D>* UVs;
 	TArray<FLinearColor>* Colors;
 	TArray<FProcMeshTangent>* Tangents;
-	FString DebugId;
 
 	FVTSMesh(
 		TArray<FVector>* vertices,
@@ -52,6 +54,27 @@ struct FVTSMesh {
 	}
 
 	~FVTSMesh()
+	{
+		//GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Red, TEXT("Destroy "+DebugId));
+	}
+};
+
+struct FVTSLabel : public FVTSDebugId {
+	FString Text;
+	FMatrix Mv;
+
+	FVTSLabel(
+		FString text,
+		FMatrix mv
+	) {
+		Text = text;
+		Mv = mv;
+	}
+
+	FVTSLabel() {
+	}
+
+	~FVTSLabel()
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Red, TEXT("Destroy "+DebugId));
 	}
@@ -82,13 +105,24 @@ public:
 	FVector VTSPhysicalToNav(FVector point);
 
 	UPROPERTY(EditAnywhere, Category = "VTS")
-	//FString ConfigURL = "https://cdn.melown.com/vts/melown2015/unity/world/mapConfig.json";
+	FString ConfigURL = "https://cdn.melown.com/vts/melown2015/unity/world/mapConfig.json";
 	//FString ConfigURL = "https://cdn.melown.com/mario/store/melown2015/map-config/melown/VTS-Tutorial-map/mapConfig.json";
 	//FString ConfigURL = "http://localhost:8070/mapproxy/melown2015/surface/examples/srtm1-n47-e013/mapConfig.json";
 	//FString ConfigURL = "http://localhost:8070/mapproxy/melown2015/surface/.system/surface-spheroid/mapConfig.json";
-	FString ConfigURL = "http://localhost:8070/mapproxy/mars-qsc/surface/mars-case-study/mars-mola-dem/mapConfig.json";
+	//FString ConfigURL = "http://localhost:8070/mapproxy/mars-qsc/surface/mars-case-study/mars-mola-dem/mapConfig.json";
 	//FString ConfigURL = "https://cdn.melown.com/mario/store/mercury-provisional/map-config/melown/mercury-messenger/mapConfig.json";
-
+	
+	FString urlUnity
+		= "https://cdn.melown.com/vts/melown2015/unity/world/mapConfig.json";
+	FString urlMercury = "https://cdn.melown.com/mario/store/mercury-provisional/map-config/melown/mercury-messenger/mapConfig.json";
+	FString urlMars = "http://localhost:8070/mapproxy/mars-qsc/surface/mars-case-study/mars-mola-dem/mapConfig.json";
+	FString urlSurface = "http://localhost:8070/mapproxy/melown2015/surface/examples/srtm1-n47-e013/mapConfig.json";
+	FString urlSurfaceSpheroid = "http://localhost:8070/mapproxy/melown2015/surface/.system/surface-spheroid/mapConfig.json";
+	FString urlVTStuto = "https://cdn.melown.com/mario/store/melown2015/map-config/melown/VTS-Tutorial-map/mapConfig.json";
+	//FString s[] = [urlUnity, urlMercury, urlMars, urlSurface, urlSurfaceSpheroid, urlVTStuto];
+	
+	UPROPERTY(EditAnywhere, Category = "VTS")
+	TArray<FString> urls = TArray<FString>();
 
 
 	UPROPERTY(EditAnywhere, Category = "VTS")

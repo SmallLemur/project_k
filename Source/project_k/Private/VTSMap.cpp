@@ -8,6 +8,12 @@ AVTSMap::AVTSMap()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	urls.Add(urlUnity);
+	urls.Add(urlMercury);
+	urls.Add(urlMars);
+	urls.Add(urlSurface);
+	urls.Add(urlSurfaceSpheroid);
+	urls.Add(urlVTStuto);
 
 }
 
@@ -141,7 +147,14 @@ void AVTSMap::LoadMesh(vts::ResourceInfo& info, vts::GpuMeshSpec& spec, const FS
 
 void AVTSMap::LoadGeodata(vts::ResourceInfo& info, vts::GpuGeodataSpec& spec, const FString debugId) {
 	GEngine->AddOnScreenDebugMessage(-1, 150.f, FColor::Cyan, debugId);
-	
+	if (debugId != "" && spec.type == vts::GpuGeodataSpec::Type::LabelScreen) {
+		std::shared_ptr<FVTSLabel> sp = std::make_shared<FVTSLabel>();
+		sp->Text = FString(spec.texts[0].c_str());
+		spec.positions[0]
+		//sp->Mv = UVTSUtil::vts2Matrix(spec.model);
+		sp->DebugId = debugId;
+		info.userData = sp;
+	}
 }
 
 void AVTSMap::MakeLocal(double navPt[3]) {

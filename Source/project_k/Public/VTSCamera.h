@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Components/TextRenderComponent.h"
 
 #include <vts-browser/map.hpp>
 #include <vts-browser/camera.hpp>
@@ -51,6 +52,9 @@ public:
 	TSubclassOf<AActor> TileBP;
 
 	UPROPERTY(EditAnywhere, Category = "VTS")
+	TSubclassOf<AActor> LabelBP;
+
+	UPROPERTY(EditAnywhere, Category = "VTS")
 	FVector vector;
 
 	FTransform uecamTransform;
@@ -62,11 +66,16 @@ public:
 	void CameraDraw();
 
 	AActor* InitTile(FVTSMesh* vtsMesh, FTransform transform);
+	AActor* InitLabel(FVTSLabel* vtsLabel, FTransform transform);
 
-	void UpdateTile(AActor* tile, FTransform transform);
+	void UpdateActor(AActor* tile, FTransform transform);
 
 	TMap<FString, TArray<AActor*>*> loadedMeshes;
+	TMap<FString, TArray<AActor*>*> loadedLabels;
 	
+	void FindMissing(TArray<FString>* loaded, TArray<FString>* taskId, TArray<FString>* out);
+	void Cleanup(TArray<FString>* toDestroy, TMap<FString, TArray<AActor*>*>* existing);
+
 	FMatrix ScaleVTS2UE = FMatrix::Identity.ApplyScale(100);
 
 	bool flag = false;

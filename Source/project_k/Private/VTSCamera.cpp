@@ -96,6 +96,31 @@ void UVTSCamera::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompo
 	CameraDraw();
 }
 
+void UVTSCamera::FindMissing(TArray<FString>* loaded, TArray<FString>* taskId, TArray<FString>* out) {
+	for (auto id : *loaded)
+	{
+		if (!taskId->Contains(id)) {
+			out->Add(id);
+		}
+	}
+}
+
+void UVTSCamera::Cleanup(TArray<FString>* toDestroy, TMap<FString, TArray<AActor*>*>* existing){
+	for (FString id : *toDestroy)
+	{
+		TArray<AActor*>* actors = *existing->Find(id);
+		if (actors == nullptr) {
+			continue;
+		}
+		for (auto a : *actors)
+		{
+			a->Destroy(); // maybe object pooling?
+		}
+		actors->Empty();
+		existing->Remove(id);
+	}
+}
+
 void UVTSCamera::CameraDraw() {
 
 	double p[16];
@@ -105,13 +130,83 @@ void UVTSCamera::CameraDraw() {
 	vcam->getView(p);
 	FMatrix inverseView = UVTSUtil::vts2Matrix(p).Inverse();
 
+	auto d = vcam->draws();
+	
+	// LABELS
+
+	TArray<FString> loadedLabelIds;
+	loadedLabels.GetKeys(loadedLabelIds);
+
+	TMap<FString, TArray<vts::DrawGeodataTask>> tasksByLabel;
+	for (auto o : d.geodata) {
+		FVTSLabel* vtsLabel = (FVTSLabel*)o.geodata.get();
+		if (!vtsLabel) {
+			continue;
+		}
+
+		if (tasksByLabel.Contains(vtsLabel->DebugId)) {
+			tasksByLabel[vtsLabel->DebugId].Add(o);
+		}
+		else {
+			tasksByLabel.Add(vtsLabel->DebugId, { o });
+		}
+	}
+
+	TArray<FString> incomingIds;
+	TArray<FString> missingIds;
+	tasksByLabel.GetKeys(incomingIds);
+	FindMissing(&loadedLabelIds, &incomingIds, &missingIds);
+	Cleanup(&missingIds, &loadedLabels);
+	missingIds.Empty();
+
+
+	TArray<FString> incoming;
+	tasksByLabel.GetKeys(incoming);
+	for (auto id : incoming)
+	{
+		auto index = 0;
+
+		TArray<AActor*>* actors = loadedLabels.FindOrAdd(id);
+		if (actors == nullptr) {
+			actors = new TArray<AActor*>();
+			loadedLabels.Add(id, actors);
+		}
+
+		for (auto o : tasksByLabel[id])
+		{
+			FVTSLabel* vtsLabel = (FVTSLabel*)o.geodata.get();
+
+			FMatrix m = UVTSUtil::SwapYZ.Inverse() * (vtsLabel->Mv * inverseView) * UVTSUtil::SwapYZ * ScaleVTS2UE;
+			m = m.ConcatTranslation(UVTSUtil::SwapYZ.Inverse().TransformVector(vtsMap->PhysicalOrigin * 100) * -1);
+			FTransform t = FTransform(m);
+
+			if (actors->Num() > index) {
+				AActor* tile = actors->GetData()[index];
+				UpdateActor(tile, t);
+			}
+			else {
+				AActor* tile = InitLabel(vtsLabel, t);
+				actors->Add(tile);
+			}
+			index++;
+		}
+		if (index > actors->Num()) {
+			for (auto i = actors->Num(); i < index; i++)
+			{
+				actors->GetData()[i]->Destroy();
+				actors->RemoveAt(i);
+			}
+		}
+	}
+	incoming.Empty();
+
+	// MESHES
+
 	TArray<FString> loadedMeshIds;
 	loadedMeshes.GetKeys(loadedMeshIds);
 
 	TMap<FString, TArray<vts::DrawSurfaceTask>> tasksByMesh;
-	
-	auto d = vcam->draws();
-	
+
 	for (auto o : d.opaque)
 	{
 		if (isnan<float>(o.mv[0])) {
@@ -131,29 +226,13 @@ void UVTSCamera::CameraDraw() {
 		}
 	}
 	
-	TArray<FString> missingMeshIds = {};
-	for (auto id : loadedMeshIds)
-	{
-		if (!tasksByMesh.Contains(id)) {
-			missingMeshIds.Add(id);
-		}
-	}
-	loadedMeshIds.Empty();
+	//TArray<FString> incomingIds;
+	tasksByMesh.GetKeys(incomingIds);
+	FindMissing(&loadedMeshIds, &incomingIds, &missingIds);
+	Cleanup(&missingIds, &loadedMeshes);
+	missingIds.Empty();
 
-	for (FString id : missingMeshIds)
-	{
-		TArray<AActor*>* actors = loadedMeshes[id];
-		for (auto a : *actors)
-		{
-			a->Destroy(); // maybe object pooling?
-			
-		}
-		actors->Empty();
-		loadedMeshes.Remove(id);
-	}
-	missingMeshIds.Empty();
-
-	TArray<FString> incoming;
+	//TArray<FString> incoming;
 	tasksByMesh.GetKeys(incoming);
 	for(auto id : incoming)
 	{
@@ -173,7 +252,7 @@ void UVTSCamera::CameraDraw() {
 
 			if (actors->Num() > index) {
 				AActor* tile = actors->GetData()[index];
-				UpdateTile(tile, t);
+				UpdateActor(tile, t);
 			}else {
 				FVTSMesh* mesh = (FVTSMesh*) o.mesh.get();
 				AActor* tile = InitTile(mesh, t);
@@ -190,23 +269,21 @@ void UVTSCamera::CameraDraw() {
 		}
 	}
 	incoming.Empty();
-	
-	
 }
 
 AActor* UVTSCamera::InitTile(FVTSMesh* vtsMesh, FTransform transform) {
 
 	FActorSpawnParameters SpawnParams;
-	AActor* tile = GetWorld()->SpawnActor<AActor>(TileBP, transform, SpawnParams);
+	AActor* actor = GetWorld()->SpawnActor<AActor>(TileBP, transform, SpawnParams);
 
 	TArray<UProceduralMeshComponent*> Comps;
 
-	tile->GetComponents(Comps);
-	UProceduralMeshComponent* TargetMesh;
+	actor->GetComponents(Comps);
+	UProceduralMeshComponent* TargetComp;
 	if (Comps.Num() > 0)
 	{
-		TargetMesh = Comps[0];
-		TargetMesh->CreateMeshSection_LinearColor(
+		TargetComp = Comps[0];
+		TargetComp->CreateMeshSection_LinearColor(
 			0,
 			*vtsMesh->Vertices,
 			*vtsMesh->Triangles,
@@ -217,11 +294,28 @@ AActor* UVTSCamera::InitTile(FVTSMesh* vtsMesh, FTransform transform) {
 			false
 		);
 	}
-	return tile;
+	return actor;
 }
 
-void UVTSCamera::UpdateTile(AActor* tile, FTransform transform) {
-	tile->SetActorTransform(transform);
+AActor* UVTSCamera::InitLabel(FVTSLabel* vtsLabel, FTransform transform) {
+
+	FActorSpawnParameters SpawnParams;
+	AActor* actor = GetWorld()->SpawnActor<AActor>(LabelBP, transform, SpawnParams);
+
+	TArray<UTextRenderComponent*> Comps;
+
+	actor->GetComponents(Comps);
+	UTextRenderComponent* TargetComp;
+	if (Comps.Num() > 0)
+	{
+		TargetComp = Comps[0];
+		TargetComp->SetText(vtsLabel->Text);
+	}
+	return actor;
+}
+
+void UVTSCamera::UpdateActor(AActor* actor, FTransform transform) {
+	actor->SetActorTransform(transform);
 }
 
 
